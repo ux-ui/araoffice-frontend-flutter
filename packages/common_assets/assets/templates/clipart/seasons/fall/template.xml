@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2012-12-25]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[가을풍경 1]]>
+			</title>
+			<keyword>
+				<![CDATA[가을,벼,수확]]>
+			</keyword>
+			<description>
+				<![CDATA[가을풍경]]>
+			</description>
+			<coverfile>
+				<![CDATA[fall_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[fall_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[단풍 1]]>
+			</title>
+			<keyword>
+				<![CDATA[가을,단풍]]>
+			</keyword>
+			<description>
+				<![CDATA[가을 단풍]]>
+			</description>
+			<coverfile>
+				<![CDATA[fall_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[fall_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[단풍 2]]>
+			</title>
+			<keyword>
+				<![CDATA[가을,단풍]]>
+			</keyword>
+			<description>
+				<![CDATA[빨간 가을 단풍]]>
+			</description>
+			<coverfile>
+				<![CDATA[fall_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[fall_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[도토리 1]]>
+			</title>
+			<keyword>
+				<![CDATA[가을,도토리]]>
+			</keyword>
+			<description>
+				<![CDATA[잘익은 도토리]]>
+			</description>
+			<coverfile>
+				<![CDATA[fall_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[fall_004.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[벼 1]]>
+			</title>
+			<keyword>
+				<![CDATA[가을,벼,쌀]]>
+			</keyword>
+			<description>
+				<![CDATA[잘익은 벼]]>
+			</description>
+			<coverfile>
+				<![CDATA[fall_005.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[fall_005.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[은행잎 1]]>
+			</title>
+			<keyword>
+				<![CDATA[가을,은행잎]]>
+			</keyword>
+			<description>
+				<![CDATA[노란 은행잎]]>
+			</description>
+			<coverfile>
+				<![CDATA[fall_006.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[fall_006.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[가을꽃 1]]>
+			</title>
+			<keyword>
+				<![CDATA[가을,꽃]]>
+			</keyword>
+			<description>
+				<![CDATA[가을꽃]]>
+			</description>
+			<coverfile>
+				<![CDATA[fall_007.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[fall_007.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[허수아비 1]]>
+			</title>
+			<keyword>
+				<![CDATA[가을,허수아비]]>
+			</keyword>
+			<description>
+				<![CDATA[허수아비]]>
+			</description>
+			<coverfile>
+				<![CDATA[fall_008.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[fall_008.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

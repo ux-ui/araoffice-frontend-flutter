@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2025-08-15]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[인사혁신처 1]]>
+			</title>
+			<keyword>
+				<![CDATA[인사혁신처,인사]]>
+			</keyword>
+			<description>
+				<![CDATA[인사혁신처]]>
+			</description>
+			<coverfile>
+				<![CDATA[mpm_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[mpm_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[인사혁신처 2]]>
+			</title>
+			<keyword>
+				<![CDATA[인사혁신처,인사]]>
+			</keyword>
+			<description>
+				<![CDATA[인사혁신처]]>
+			</description>
+			<coverfile>
+				<![CDATA[mpm_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[mpm_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[인사혁신처 3]]>
+			</title>
+			<keyword>
+				<![CDATA[인사혁신처,인사]]>
+			</keyword>
+			<description>
+				<![CDATA[인사혁신처]]>
+			</description>
+			<coverfile>
+				<![CDATA[mpm_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[mpm_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[인사혁신처 4]]>
+			</title>
+			<keyword>
+				<![CDATA[인사혁신처,인사]]>
+			</keyword>
+			<description>
+				<![CDATA[인사혁신처]]>
+			</description>
+			<coverfile>
+				<![CDATA[mpm_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[mpm_004.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

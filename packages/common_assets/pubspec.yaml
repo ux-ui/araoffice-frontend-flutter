@@ -1,0 +1,231 @@
+name: common_assets
+description: "A new Flutter package project."
+version: 0.0.1
+homepage: https://araoffice.com
+
+environment:
+  sdk: ">=3.3.1 <4.0.0"
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_gen: 5.7.0
+  flutter_svg: ^2.0.10+1
+  pointer_interceptor: ^0.10.1+2
+  path:
+  xml:
+  
+dev_dependencies: 
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner:
+  flutter_gen_runner:
+
+flutter:
+  assets:
+    - assets/
+    - assets/icon/
+    - assets/image/
+
+    # Templates - Clipart
+    - assets/templates/
+    - assets/templates/clipart/
+    - assets/templates/clipart/business/
+    - assets/templates/clipart/business/occupation/
+    - assets/templates/clipart/culture/
+    - assets/templates/clipart/culture/buddhism/
+    - assets/templates/clipart/culture/christianity/
+    - assets/templates/clipart/culture/dessert/
+    - assets/templates/clipart/culture/food/
+    - assets/templates/clipart/culture/fuit/
+    - assets/templates/clipart/culture/traditional/
+    - assets/templates/clipart/education/
+    - assets/templates/clipart/education/art/
+    - assets/templates/clipart/education/english/
+    - assets/templates/clipart/education/geography/
+    - assets/templates/clipart/education/inschool/
+    - assets/templates/clipart/education/math/
+    - assets/templates/clipart/education/music/
+    - assets/templates/clipart/education/physicaleducation/
+    - assets/templates/clipart/education/schoolthings/
+    - assets/templates/clipart/education/science/
+    - assets/templates/clipart/education/timetable/
+    - assets/templates/clipart/flora_fauna/
+    - assets/templates/clipart/flora_fauna/animal/
+    - assets/templates/clipart/flora_fauna/bird/
+    - assets/templates/clipart/flora_fauna/bugreptile/
+    - assets/templates/clipart/flora_fauna/fish/
+    - assets/templates/clipart/flora_fauna/flower/
+    - assets/templates/clipart/flora_fauna/tree/
+    - assets/templates/clipart/lifestyle/
+    - assets/templates/clipart/lifestyle/event/
+    - assets/templates/clipart/lifestyle/fashion/
+    - assets/templates/clipart/lifestyle/medical/
+    - assets/templates/clipart/people/
+    - assets/templates/clipart/people/aged/
+    - assets/templates/clipart/people/baby/
+    - assets/templates/clipart/people/character/
+    - assets/templates/clipart/people/children/
+    - assets/templates/clipart/people/family/
+    - assets/templates/clipart/people/man/
+    - assets/templates/clipart/people/teenager/
+    - assets/templates/clipart/people/woman/
+    - assets/templates/clipart/props/
+    - assets/templates/clipart/props/housewares/
+    - assets/templates/clipart/props/officeupplies/
+    - assets/templates/clipart/props/smartdevices/
+    - assets/templates/clipart/props/sports/
+    - assets/templates/clipart/props/toy/
+    - assets/templates/clipart/seasons/
+    - assets/templates/clipart/seasons/fall/
+    - assets/templates/clipart/seasons/spring/
+    - assets/templates/clipart/seasons/summer/
+    - assets/templates/clipart/seasons/weather/
+    - assets/templates/clipart/seasons/winter/
+    - assets/templates/clipart/sports/
+    - assets/templates/clipart/sports/badminton/
+    - assets/templates/clipart/sports/baseball/
+    - assets/templates/clipart/sports/basketball/
+    - assets/templates/clipart/sports/billiards/
+    - assets/templates/clipart/sports/bowling/
+    - assets/templates/clipart/sports/climbing/
+    - assets/templates/clipart/sports/handball/
+    - assets/templates/clipart/sports/hockey/
+    - assets/templates/clipart/sports/skiing/
+    - assets/templates/clipart/sports/soccer/
+    - assets/templates/clipart/symbols/
+    - assets/templates/clipart/symbols/alphabet/
+    - assets/templates/clipart/symbols/arrow/
+    - assets/templates/clipart/symbols/boxalphabet/
+    - assets/templates/clipart/symbols/floweralphabet/
+    - assets/templates/clipart/symbols/number/
+    - assets/templates/clipart/symbols/specialcharacter/
+    - assets/templates/clipart/symbols/symbol/
+    - assets/templates/clipart/transportation_main/
+    - assets/templates/clipart/transportation_main/transportation/
+
+    # Templates - Government Logos (glogo)
+    - assets/templates/glogo/
+    
+    # 1. 중앙행정기관 (부) 및 소속 기관
+    - assets/templates/glogo/government_main/
+    - assets/templates/glogo/government_main/government/
+    
+    - assets/templates/glogo/moef_main/
+    - assets/templates/glogo/moef_main/moef/
+    - assets/templates/glogo/moef_main/nts/
+    - assets/templates/glogo/moef_main/customs/
+    - assets/templates/glogo/moef_main/pps/
+    - assets/templates/glogo/moef_main/kostat/
+    
+    - assets/templates/glogo/moe_main/
+    - assets/templates/glogo/moe_main/moe/
+    
+    - assets/templates/glogo/msit_main/
+    - assets/templates/glogo/msit_main/msit/
+    
+    - assets/templates/glogo/mofa_main/
+    - assets/templates/glogo/mofa_main/mofa/
+    
+    - assets/templates/glogo/unikorea_main/
+    - assets/templates/glogo/unikorea_main/unikorea/
+    
+    - assets/templates/glogo/moj_main/
+    - assets/templates/glogo/moj_main/moj/
+    - assets/templates/glogo/moj_main/spo/
+    
+    - assets/templates/glogo/mnd_main/
+    - assets/templates/glogo/mnd_main/mnd/
+    - assets/templates/glogo/mnd_main/mma/
+    - assets/templates/glogo/mnd_main/dapa/
+    
+    - assets/templates/glogo/mois_main/
+    - assets/templates/glogo/mois_main/mois/
+    - assets/templates/glogo/mois_main/police/
+    - assets/templates/glogo/mois_main/nfa/
+    
+    - assets/templates/glogo/mcst_main/
+    - assets/templates/glogo/mcst_main/mcst/
+    - assets/templates/glogo/mcst_main/khs/
+    
+    - assets/templates/glogo/mafra_main/
+    - assets/templates/glogo/mafra_main/mafra/
+    - assets/templates/glogo/mafra_main/rda/
+    - assets/templates/glogo/mafra_main/forest/
+    
+    - assets/templates/glogo/motie_main/
+    - assets/templates/glogo/motie_main/motie/
+    - assets/templates/glogo/motie_main/kipo/
+    
+    - assets/templates/glogo/mohw_main/
+    - assets/templates/glogo/mohw_main/mohw/
+    - assets/templates/glogo/mohw_main/kdca/
+    
+    - assets/templates/glogo/me_main/
+    - assets/templates/glogo/me_main/me/
+    - assets/templates/glogo/me_main/kma/
+    
+    - assets/templates/glogo/moel_main/
+    - assets/templates/glogo/moel_main/moel/
+    
+    - assets/templates/glogo/mogef_main/
+    - assets/templates/glogo/mogef_main/mogef/
+    
+    - assets/templates/glogo/molit_main/
+    - assets/templates/glogo/molit_main/molit/
+    - assets/templates/glogo/molit_main/naacc/
+    - assets/templates/glogo/molit_main/saemangeum/
+    
+    - assets/templates/glogo/mof_main/
+    - assets/templates/glogo/mof_main/mof/
+    - assets/templates/glogo/mof_main/kcg/
+    
+    - assets/templates/glogo/mss_main/
+    - assets/templates/glogo/mss_main/mss/
+    
+    - assets/templates/glogo/mpva_main/
+    - assets/templates/glogo/mpva_main/mpva/
+    
+    # 2. 국무총리 소속 기관
+    - assets/templates/glogo/opm_sub_main/
+    - assets/templates/glogo/opm_sub_main/humanrights/
+    - assets/templates/glogo/opm_sub_main/cts/
+    - assets/templates/glogo/opm_sub_main/fsc/
+    - assets/templates/glogo/opm_sub_main/acrc/
+    - assets/templates/glogo/opm_sub_main/kcc/
+    - assets/templates/glogo/opm_sub_main/nssc/
+    - assets/templates/glogo/opm_sub_main/pipc/
+    - assets/templates/glogo/opm_sub_main/mpm/
+    - assets/templates/glogo/opm_sub_main/moleg/
+    - assets/templates/glogo/opm_sub_main/mfds/
+    
+    # 3. 대통령 직속 기관
+    - assets/templates/glogo/president_main/
+    - assets/templates/glogo/president_main/president/
+    - assets/templates/glogo/president_main/nis/
+    - assets/templates/glogo/president_main/pss/
+    - assets/templates/glogo/president_main/bai/
+    - assets/templates/glogo/president_main/opm/
+    
+    # 4. 독립 기관
+    - assets/templates/glogo/independent_main/
+    - assets/templates/glogo/independent_main/cio/
+    - assets/templates/glogo/independent_main/kasa/
+    - assets/templates/glogo/independent_main/oka/
+    
+    # 5. 기타
+    - assets/templates/glogo/etc_main/
+    - assets/templates/glogo/etc_main/etc/
+
+flutter_gen:
+  assets:
+    enabled: true
+    outputs:
+      package_parameter_enabled: true
+  output: lib/src/generated/
+  line_length: 80
+
+  integrations:
+    flutter_svg: true

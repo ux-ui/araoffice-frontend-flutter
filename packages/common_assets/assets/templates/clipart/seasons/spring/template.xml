@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2012-12-25]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[개나리 1]]>
+			</title>
+			<keyword>
+				<![CDATA[봄,개나리,꽃]]>
+			</keyword>
+			<description>
+				<![CDATA[봄에 피는 개나리]]>
+			</description>
+			<coverfile>
+				<![CDATA[spring_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[spring_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[민들레 1]]>
+			</title>
+			<keyword>
+				<![CDATA[봄,민들레,꽃]]>
+			</keyword>
+			<description>
+				<![CDATA[봄에 피는 민들레]]>
+			</description>
+			<coverfile>
+				<![CDATA[spring_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[spring_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[민들레홀씨 1]]>
+			</title>
+			<keyword>
+				<![CDATA[봄,민들레홑씨,민들레홀씨,꽃]]>
+			</keyword>
+			<description>
+				<![CDATA[봄에 피는 민들레홑씨]]>
+			</description>
+			<coverfile>
+				<![CDATA[spring_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[spring_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[벚꽃 1]]>
+			</title>
+			<keyword>
+				<![CDATA[봄,꽃]]>
+			</keyword>
+			<description>
+				<![CDATA[봄에 피는 벚꽃]]>
+			</description>
+			<coverfile>
+				<![CDATA[spring_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[spring_004.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[새싹 1]]>
+			</title>
+			<keyword>
+				<![CDATA[봄,새싹]]>
+			</keyword>
+			<description>
+				<![CDATA[봄에 피는 새싹]]>
+			</description>
+			<coverfile>
+				<![CDATA[spring_005.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[spring_005.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[봄꽃 1]]>
+			</title>
+			<keyword>
+				<![CDATA[봄,꽃]]>
+			</keyword>
+			<description>
+				<![CDATA[봄에 피는 꽃]]>
+			</description>
+			<coverfile>
+				<![CDATA[spring_006.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[spring_006.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[봄꽃 2]]>
+			</title>
+			<keyword>
+				<![CDATA[봄,개구리,연꽃]]>
+			</keyword>
+			<description>
+				<![CDATA[봄과 개구리]]>
+			</description>
+			<coverfile>
+				<![CDATA[spring_007.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[spring_007.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

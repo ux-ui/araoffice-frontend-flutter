@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2025-08-20]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[국세청 1]]>
+			</title>
+			<keyword>
+				<![CDATA[국세청]]>
+			</keyword>
+			<description>
+				<![CDATA[국세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[nts_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nts_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[국세청 2]]>
+			</title>
+			<keyword>
+				<![CDATA[국세청]]>
+			</keyword>
+			<description>
+				<![CDATA[국세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[nts_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nts_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[국세청 3]]>
+			</title>
+			<keyword>
+				<![CDATA[국세청]]>
+			</keyword>
+			<description>
+				<![CDATA[국세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[nts_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nts_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[국세청 4]]>
+			</title>
+			<keyword>
+				<![CDATA[국세청]]>
+			</keyword>
+			<description>
+				<![CDATA[국세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[nts_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nts_004.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[국세청 5]]>
+			</title>
+			<keyword>
+				<![CDATA[국세청]]>
+			</keyword>
+			<description>
+				<![CDATA[국세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[nts_005.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nts_005.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[국세청 6]]>
+			</title>
+			<keyword>
+				<![CDATA[국세청]]>
+			</keyword>
+			<description>
+				<![CDATA[국세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[nts_006.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nts_006.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

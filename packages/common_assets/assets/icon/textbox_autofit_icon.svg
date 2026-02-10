@@ -1,0 +1,16 @@
+<svg width="48" height="32" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="0.5" y="0.5" width="47" height="31" rx="1.5" fill="white"/>
+<rect x="0.5" y="0.5" width="47" height="31" rx="1.5" stroke="#E5E2E1"/>
+<rect x="6" y="7" width="16" height="2" rx="1" fill="#ACACAC"/>
+<rect x="6" y="11" width="6" height="6" rx="1" fill="#ACACAC"/>
+<rect x="13" y="11" width="9" height="2" rx="1" fill="#ACACAC"/>
+<rect x="13" y="15" width="9" height="2" rx="1" fill="#ACACAC"/>
+<rect x="6" y="19" width="16" height="2" rx="1" fill="#ACACAC"/>
+<rect x="6" y="23" width="10" height="2" rx="1" fill="#ACACAC"/>
+<rect x="26" y="7" width="16" height="2" rx="1" fill="#ACACAC"/>
+<rect x="26" y="11" width="6" height="6" rx="1" fill="#ACACAC"/>
+<rect x="33" y="11" width="9" height="2" rx="1" fill="#ACACAC"/>
+<rect x="33" y="15" width="9" height="2" rx="1" fill="#ACACAC"/>
+<rect x="26" y="19" width="16" height="2" rx="1" fill="#ACACAC"/>
+<rect x="26" y="23" width="10" height="2" rx="1" fill="#ACACAC"/>
+</svg>

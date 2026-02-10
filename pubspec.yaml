@@ -1,0 +1,58 @@
+name: app
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ">=3.3.1 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  get: ^4.6.6
+  flutter_easyloading: ^3.0.5
+  package_info_plus: ^8.0.0
+  pointer_interceptor: ^0.10.1+2
+  web: ^1.1.0
+  dio: ^5.7.0
+  http: ^1.2.2
+  cross_file: ^0.3.4+2
+  file_picker: ^8.1.4
+  
+  flutter_inappwebview: ^6.1.5
+  app_ui:
+    path: packages/app_ui
+  author_editor:
+    path: packages/author_editor
+  common_assets:
+    path: packages/common_assets
+  common_util:
+    path: packages/common_util
+  app_localization:
+    path: packages/app_localization
+  api:
+    path: packages/api
+  go_router: ^14.3.0
+  uuid: ^3.0.7
+  flutter_secure_storage: ^9.2.4
+  email_validator: ^3.0.0
+  shared_preferences: ^2.3.5
+  intl: ^0.19.0
+  url_launcher: ^6.3.1
+  auto_size_text: ^3.0.0
+  crypto: ^3.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  # assets:
+  #   - assets/
+  #   - assets/fonts/
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: fonts/Roboto-Regular.ttf

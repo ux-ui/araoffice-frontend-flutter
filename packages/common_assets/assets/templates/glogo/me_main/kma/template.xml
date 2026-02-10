@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2025-08-20]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[기상청 1]]>
+			</title>
+			<keyword>
+				<![CDATA[기상청]]>
+			</keyword>
+			<description>
+				<![CDATA[기상청]]>
+			</description>
+			<coverfile>
+				<![CDATA[kma_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[kma_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[기상청 2]]>
+			</title>
+			<keyword>
+				<![CDATA[기상청]]>
+			</keyword>
+			<description>
+				<![CDATA[기상청]]>
+			</description>
+			<coverfile>
+				<![CDATA[kma_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[kma_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[기상청 3]]>
+			</title>
+			<keyword>
+				<![CDATA[기상청]]>
+			</keyword>
+			<description>
+				<![CDATA[기상청]]>
+			</description>
+			<coverfile>
+				<![CDATA[kma_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[kma_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[기상청 4]]>
+			</title>
+			<keyword>
+				<![CDATA[기상청]]>
+			</keyword>
+			<description>
+				<![CDATA[기상청]]>
+			</description>
+			<coverfile>
+				<![CDATA[kma_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[kma_004.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[기상청 5]]>
+			</title>
+			<keyword>
+				<![CDATA[기상청]]>
+			</keyword>
+			<description>
+				<![CDATA[기상청]]>
+			</description>
+			<coverfile>
+				<![CDATA[kma_005.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[kma_005.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[기상청 6]]>
+			</title>
+			<keyword>
+				<![CDATA[기상청]]>
+			</keyword>
+			<description>
+				<![CDATA[기상청]]>
+			</description>
+			<coverfile>
+				<![CDATA[kma_006.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[kma_006.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[기상청 7]]>
+			</title>
+			<keyword>
+				<![CDATA[기상청]]>
+			</keyword>
+			<description>
+				<![CDATA[기상청]]>
+			</description>
+			<coverfile>
+				<![CDATA[kma_007.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[kma_007.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[기상청 8]]>
+			</title>
+			<keyword>
+				<![CDATA[기상청]]>
+			</keyword>
+			<description>
+				<![CDATA[기상청]]>
+			</description>
+			<coverfile>
+				<![CDATA[kma_008.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[kma_008.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

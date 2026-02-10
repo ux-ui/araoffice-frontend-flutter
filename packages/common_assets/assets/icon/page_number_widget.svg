@@ -1,0 +1,7 @@
+<svg width="56" height="44" viewBox="0 0 56 44" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Container -->
+  <rect x="4" y="4" width="48" height="36" rx="3" fill="white" stroke="#E5E2E1" stroke-width="1"/>
+  
+  <!-- "- 1 -" Page Number Text -->
+  <text x="28" y="25" font-family="Arial" font-size="14" fill="#333333" text-anchor="middle">- 1 -</text>
+</svg>

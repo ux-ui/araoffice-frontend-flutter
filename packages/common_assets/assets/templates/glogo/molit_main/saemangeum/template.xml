@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2025-08-15]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[새만금개발청 1]]>
+			</title>
+			<keyword>
+				<![CDATA[새만금개발청,새만금,개발]]>
+			</keyword>
+			<description>
+				<![CDATA[새만금개발청]]>
+			</description>
+			<coverfile>
+				<![CDATA[saemangeum_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[saemangeum_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[새만금개발청 2]]>
+			</title>
+			<keyword>
+				<![CDATA[새만금개발청,새만금,개발]]>
+			</keyword>
+			<description>
+				<![CDATA[새만금개발청]]>
+			</description>
+			<coverfile>
+				<![CDATA[saemangeum_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[saemangeum_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[새만금개발청 3]]>
+			</title>
+			<keyword>
+				<![CDATA[새만금개발청,새만금,개발]]>
+			</keyword>
+			<description>
+				<![CDATA[새만금개발청]]>
+			</description>
+			<coverfile>
+				<![CDATA[saemangeum_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[saemangeum_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[새만금개발청 4]]>
+			</title>
+			<keyword>
+				<![CDATA[새만금개발청,새만금,개발]]>
+			</keyword>
+			<description>
+				<![CDATA[새만금개발청]]>
+			</description>
+			<coverfile>
+				<![CDATA[saemangeum_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[saemangeum_004.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

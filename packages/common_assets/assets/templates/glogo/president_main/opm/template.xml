@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2025-08-15]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[국무조정실 국무총리비서실 1]]>
+			</title>
+			<keyword>
+				<![CDATA[국무조정실,국무총리비서실,총리]]>
+			</keyword>
+			<description>
+				<![CDATA[국무조정실 국무총리비서실]]>
+			</description>
+			<coverfile>
+				<![CDATA[opm_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[opm_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[국무조정실 국무총리비서실 2]]>
+			</title>
+			<keyword>
+				<![CDATA[국무조정실,국무총리비서실,총리]]>
+			</keyword>
+			<description>
+				<![CDATA[국무조정실 국무총리비서실]]>
+			</description>
+			<coverfile>
+				<![CDATA[opm_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[opm_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[국무조정실 국무총리비서실 3]]>
+			</title>
+			<keyword>
+				<![CDATA[국무조정실,국무총리비서실,총리]]>
+			</keyword>
+			<description>
+				<![CDATA[국무조정실 국무총리비서실]]>
+			</description>
+			<coverfile>
+				<![CDATA[opm_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[opm_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[국무조정실 국무총리비서실 4]]>
+			</title>
+			<keyword>
+				<![CDATA[국무조정실,국무총리비서실,총리]]>
+			</keyword>
+			<description>
+				<![CDATA[국무조정실 국무총리비서실]]>
+			</description>
+			<coverfile>
+				<![CDATA[opm_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[opm_004.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

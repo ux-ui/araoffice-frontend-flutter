@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2025-08-20]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[관세청 1]]>
+			</title>
+			<keyword>
+				<![CDATA[관세청]]>
+			</keyword>
+			<description>
+				<![CDATA[관세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[customs_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[customs_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[관세청 2]]>
+			</title>
+			<keyword>
+				<![CDATA[관세청]]>
+			</keyword>
+			<description>
+				<![CDATA[관세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[customs_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[customs_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[관세청 3]]>
+			</title>
+			<keyword>
+				<![CDATA[관세청]]>
+			</keyword>
+			<description>
+				<![CDATA[관세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[customs_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[customs_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[관세청 4]]>
+			</title>
+			<keyword>
+				<![CDATA[관세청]]>
+			</keyword>
+			<description>
+				<![CDATA[관세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[customs_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[customs_004.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[관세청 5]]>
+			</title>
+			<keyword>
+				<![CDATA[관세청]]>
+			</keyword>
+			<description>
+				<![CDATA[관세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[customs_005.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[customs_005.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[관세청 6]]>
+			</title>
+			<keyword>
+				<![CDATA[관세청]]>
+			</keyword>
+			<description>
+				<![CDATA[관세청]]>
+			</description>
+			<coverfile>
+				<![CDATA[customs_006.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[customs_006.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

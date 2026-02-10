@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2012-12-25]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 1]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,구름]]>
+			</keyword>
+			<description>
+				<![CDATA[평온한 구름]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 2]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,비,구름]]>
+			</keyword>
+			<description>
+				<![CDATA[비구름]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 3]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,해,맑음]]>
+			</keyword>
+			<description>
+				<![CDATA[웃고있는 해]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 4]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,구름,해]]>
+			</keyword>
+			<description>
+				<![CDATA[구름에 가려진 해]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_004.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 5]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,눈]]>
+			</keyword>
+			<description>
+				<![CDATA[눈]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_005.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_005.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 6]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,해,맑음]]>
+			</keyword>
+			<description>
+				<![CDATA[맑음]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_006.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_006.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 7]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,구름,해]]>
+			</keyword>
+			<description>
+				<![CDATA[구름에 가려진 해]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_007.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_007.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 8]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,구름]]>
+			</keyword>
+			<description>
+				<![CDATA[흐림]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_008.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_008.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 9]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,비,구름,우산]]>
+			</keyword>
+			<description>
+				<![CDATA[우산과 비]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_009.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_009.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 10]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,눈,눈사람]]>
+			</keyword>
+			<description>
+				<![CDATA[눈사람]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_010.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_010.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[날씨 11]]>
+			</title>
+			<keyword>
+				<![CDATA[날씨,눈,눈사람]]>
+			</keyword>
+			<description>
+				<![CDATA[큰 눈사람과 작은 눈사람]]>
+			</description>
+			<coverfile>
+				<![CDATA[weather_011.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[weather_011.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

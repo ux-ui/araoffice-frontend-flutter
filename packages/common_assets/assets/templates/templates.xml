@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dictionary>
+    <templates type="glogo" name="glogo" description="관공서로고">
+        <!-- 1. 중앙행정기관 (부) 및 소속 기관 -->
+        <template name="government_main" description="대한민국정부">
+            <template name="government" description="대한민국정부"/>
+        </template>
+        
+        <!-- 3. 대통령 직속 기관 -->
+        <template name="president_main" description="대통령 직속 기관">
+            <template name="president" description="대통령실"/>
+            <template name="nis" description="국가정보원"/>
+            <template name="pss" description="대통령경호처"/>
+            <template name="bai" description="감사원"/>
+            <template name="opm" description="국무조정실"/>
+        </template>
+
+        <template name="mois_main" description="행정안전부">
+            <template name="mois" description="행정안전부"/>
+            <template name="police" description="경찰청"/>
+            <template name="nfa" description="소방청"/>
+        </template>
+        
+        <template name="moef_main" description="기획재정부">
+            <template name="moef" description="기획재정부"/>
+            <template name="nts" description="국세청"/>
+            <template name="customs" description="관세청"/>
+            <template name="pps" description="조달청"/>
+            <template name="kostat" description="통계청"/>
+        </template>
+        
+        <template name="moe_main" description="교육부">
+            <template name="moe" description="교육부"/>
+        </template>
+        
+        <template name="msit_main" description="과학기술정보통신부">
+            <template name="msit" description="과학기술정보통신부"/>
+        </template>
+        
+        <template name="mofa_main" description="외교부">
+            <template name="mofa" description="외교부"/>
+        </template>
+        
+        <template name="unikorea_main" description="통일부">
+            <template name="unikorea" description="통일부"/>
+        </template>
+        
+        <template name="moj_main" description="법무부">
+            <template name="moj" description="법무부"/>
+            <template name="spo" description="검찰청"/>
+        </template>
+        
+        <template name="mnd_main" description="국방부">
+            <template name="mnd" description="국방부"/>
+            <template name="mma" description="병무청"/>
+            <template name="dapa" description="방위사업청"/>
+        </template>
+        
+        <template name="mcst_main" description="문화체육관광부">
+            <template name="mcst" description="문화체육관광부"/>
+            <template name="khs" description="국가유산청"/>
+        </template>
+        
+        <template name="mafra_main" description="농림축산식품부">
+            <template name="mafra" description="농림축산식품부"/>
+            <template name="rda" description="농촌진흥청"/>
+            <template name="forest" description="산림청"/>
+        </template>
+        
+        <template name="motie_main" description="산업통상자원부">
+            <template name="motie" description="산업통상자원부"/>
+            <template name="kipo" description="특허청"/>
+        </template>
+        
+        <template name="mohw_main" description="보건복지부">
+            <template name="mohw" description="보건복지부"/>
+            <template name="kdca" description="질병관리청"/>
+        </template>
+        
+        <template name="me_main" description="환경부">
+            <template name="me" description="환경부"/>
+            <template name="kma" description="기상청"/>
+        </template>
+        
+        <template name="moel_main" description="고용노동부">
+            <template name="moel" description="고용노동부"/>
+        </template>
+        
+        <template name="mogef_main" description="여성가족부">
+            <template name="mogef" description="여성가족부"/>
+        </template>
+        
+        <template name="molit_main" description="국토교통부">
+            <template name="molit" description="국토교통부"/>
+            <template name="naacc" description="행정중심복합도시건설청"/>
+            <template name="saemangeum" description="새만금개발청"/>
+        </template>
+        
+        <template name="mof_main" description="해양수산부">
+            <template name="mof" description="해양수산부"/>
+            <template name="kcg" description="해양경찰청"/>
+        </template>
+        
+        <template name="mss_main" description="중소벤처기업부">
+            <template name="mss" description="중소벤처기업부"/>
+        </template>
+        
+        <template name="mpva_main" description="국가보훈부">
+            <template name="mpva" description="국가보훈부"/>
+        </template>
+        
+        <!-- 2. 국무총리 소속 기관 -->
+        <template name="opm_sub_main" description="국무총리 소속 기관">
+            <template name="humanrights" description="국가인권위원회"/>
+            <template name="cts" description="공정거래위원회"/>
+            <template name="fsc" description="금융위원회"/>
+            <template name="acrc" description="국민권익위원회"/>
+            <template name="kcc" description="방송통신위원회"/>
+            <template name="nssc" description="원자력안전위원회"/>
+            <template name="pipc" description="개인정보보호위원회"/>
+            <template name="mpm" description="인사혁신처"/>
+            <template name="moleg" description="법제처"/>
+            <template name="mfds" description="식품의약품안전처"/>
+        </template>
+                
+        <!-- 4. 독립 기관 -->
+        <template name="independent_main" description="독립 기관">
+            <template name="cio" description="고위공직자범죄수사처"/>
+            <template name="kasa" description="우주항공청"/>
+            <template name="oka" description="재외동포청"/>
+        </template>
+        
+        <!-- 5. 기타 -->
+        <template name="etc_main" description="기타">
+            <template name="etc" description="기타"/>
+        </template>
+    </templates>
+    <templates type="clipart" name="clipart" description="클립아트">
+        <template name="seasons" description="계절 배경">
+            <template name="fall" description="가을"/>
+            <template name="winter" description="겨울"/>
+            <template name="weather" description="날씨"/>
+            <template name="spring" description="봄"/>
+            <template name="summer" description="여름"/>
+        </template>
+        
+        <template name="education" description="교육">
+            <template name="science" description="과학"/>
+            <template name="art" description="미술"/>
+            <template name="math" description="수학"/>
+            <template name="timetable" description="시간표"/>
+            <template name="english" description="영어"/>
+            <template name="music" description="음악"/>
+            <template name="geography" description="지리"/>
+            <template name="physicaleducation" description="체육"/>
+            <template name="inschool" description="학교생활"/>
+            <template name="schoolthings" description="학생용품"/>
+        </template>
+        
+        <template name="transportation_main" description="교통">
+            <template name="transportation" description="교통"/>
+        </template>
+        
+        <template name="symbols" description="기호 문자">
+            <template name="symbol" description="기호"/>
+            <template name="floweralphabet" description="꽃모양 알파벳"/>
+            <template name="boxalphabet" description="박스형 알파벳"/>
+            <template name="number" description="숫자"/>
+            <template name="alphabet" description="알파벳"/>
+            <template name="specialcharacter" description="특수문자"/>
+            <template name="arrow" description="화살표"/>
+        </template>
+        
+        <template name="flora_fauna" description="동식물">
+            <template name="bugreptile" description="곤충 파충류"/>
+            <template name="flower" description="꽃"/>
+            <template name="tree" description="나무"/>
+            <template name="animal" description="동물"/>
+            <template name="bird" description="새"/>
+            <template name="fish" description="어류"/>
+        </template>
+        
+        <template name="lifestyle" description="라이프 스타일">
+            <template name="medical" description="의학건강"/>
+            <template name="event" description="이벤트"/>
+            <template name="fashion" description="패션뷰티"/>
+        </template>
+        
+        <template name="culture" description="문화">
+            <template name="fuit" description="과일 야채"/>
+            <template name="christianity" description="기독교"/>
+            <template name="dessert" description="디저트"/>
+            <template name="buddhism" description="불교"/>
+            <template name="food" description="음식"/>
+            <template name="traditional" description="전통문화"/>
+        </template>
+        
+        <template name="business" description="비즈니스">
+            <template name="occupation" description="직업"/>
+        </template>
+        
+        <template name="props" description="소품">
+            <template name="housewares" description="가정용품"/>
+            <template name="officeupplies" description="사무용품"/>
+            <template name="smartdevices" description="스마트기기"/>
+            <template name="sports" description="스포츠 레저용품"/>
+            <template name="toy" description="장난감"/>
+        </template>
+        
+        <template name="sports" description="스포츠">
+            <template name="basketball" description="농구"/>
+            <template name="billiards" description="당구"/>
+            <template name="climbing" description="등산"/>
+            <template name="badminton" description="배드민턴"/>
+            <template name="bowling" description="볼링"/>
+            <template name="skiing" description="스키"/>
+            <template name="baseball" description="야구"/>
+            <template name="soccer" description="축구"/>
+            <template name="hockey" description="하키"/>
+            <template name="handball" description="핸드볼"/>
+        </template>
+        
+        <template name="people" description="인물">
+            <template name="family" description="가족"/>
+            <template name="man" description="남성"/>
+            <template name="children" description="어린이"/>
+            <template name="woman" description="여성"/>
+            <template name="baby" description="유아"/>
+            <template name="aged" description="중년 노인"/>
+            <template name="teenager" description="청소년"/>
+            <template name="character" description="캐틱터"/>
+        </template>
+    </templates>
+</dictionary>

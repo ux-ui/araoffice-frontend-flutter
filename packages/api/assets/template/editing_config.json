@@ -1,0 +1,139 @@
+﻿{
+  "borderDisplay": {
+    "lineColor": "gray",
+    "div": {
+      "unconditional": false,
+      "default": true,
+      "not": [
+        { "class": true, "value": "ba-hidden" },
+        { "class": true, "value": "ba-no-border" }
+      ]
+    },
+    "figure": { "same": "div" },
+    "figcaption": { "same": "div" },
+    "form": { "same": "div" },
+    "bdimg": { "same": "div" },
+    "replacer": { "same": "div" },
+    "container": { "same": "div", "lineColor": "#ff0000" },
+    "img": { "same": "div" }
+  },
+  "borderRequire": {
+    "lineColor": "gray",
+    "table": {
+      "unconditional": true
+    },
+    "th": { "same": "table" },
+    "td": { "same": "table" }
+  },
+  "select": {
+    "lineColor": "blue",
+    "hoverLineColor": "red",
+    "div": {
+      "unconditional": false,
+      "onlyBorder": true,
+      "default": true,
+      "not": [
+        { "class": true, "value": "ba-hidden" },
+        { "class": true, "value": "ba-no-select" }
+      ]
+    },
+    "table": { "same": "div" },
+    "figure": { "same": "div" },
+    "figcaption": { "same": "div" },
+    "form": { "same": "div" },
+    "img": {
+      "unconditional": false,
+      "onlyBorder": false,
+      "default": true,
+      "not": [
+        { "class": true, "value": "ba-hidden" },
+        { "class": true, "value": "ba-no-select" }
+      ]
+    },
+    "video": { "same": "img" },
+    "audio": { "same": "img" },
+    "svg": { "same": "img" },
+    "canvas": { "same": "img" },
+    "input": { "same": "img" },
+    "select": { "same": "img" },
+    "textarea": { "same": "img" },
+    "iframe": { "same": "img" },
+    "bdimg": { "same": "img" },
+    "replacer": { "same": "img" },
+    "container": { "same": "img" },
+    "span": {
+      "unconditional": false,
+      "onlyBorder": true,
+      "default": false,
+      "or": [{ "class": true, "value": "ba-select" }]
+    }
+  },
+  "resize": {
+    "lineColor": "#0000ff",
+    "keyStep": 5,
+    "microKeyStep": 1,
+    "thumbSize": 5,
+    "thumbGap": 0,
+    "div": {
+      "unconditional": false,
+      "default": true,
+      "not": [
+        { "class": true, "value": "ba-only-select" },
+        { "class": true, "value": "ba-no-resize" }
+      ]
+    },
+    "table": { "same": "div" },
+    "figure": { "same": "div" },
+    "figcaption": { "same": "div" },
+    "form": { "same": "div" },
+    "img": { "same": "div" },
+    "video": { "same": "div" },
+    "audio": { "same": "div" },
+    "svg": { "same": "div" },
+    "canvas": { "same": "div" },
+    "input": { "same": "div" },
+    "select": { "same": "div" },
+    "textarea": { "same": "div" },
+    "iframe": { "same": "div" },
+    "bdimg": { "same": "div" },
+    "replacer": { "same": "div" },
+    "container": { "same": "div" }
+  },
+  "move": {
+    "lineColor": "#666666",
+    "keyStep": 5,
+    "microKeyStep": 1,
+    "thumbSize": 7,
+    "thumbGap": 0,
+    "div": {
+      "unconditional": false,
+      "onlyBorder": true,
+      "default": false,
+      "not": [
+        { "class": true, "value": "ba-only-select" },
+        { "class": true, "value": "ba-no-move" }
+      ],
+      "or": [
+        { "class": false, "name": "position", "value": "fixed" },
+        { "class": false, "name": "position", "value": "absolute" },
+        { "class": false, "name": "position", "value": "relative" }
+      ]
+    },
+    "table": { "same": "div" },
+    "figure": { "same": "div" },
+    "figcaption": { "same": "div" },
+    "form": { "same": "div" },
+    "img": { "same": "div" },
+    "video": { "same": "div" },
+    "audio": { "same": "div" },
+    "svg": { "same": "div" },
+    "canvas": { "same": "div" },
+    "input": { "same": "div" },
+    "select": { "same": "div" },
+    "textarea": { "same": "div" },
+    "iframe": { "same": "div" },
+    "bdimg": { "same": "div" },
+    "replacer": { "same": "div" },
+    "container": { "same": "div" }
+  }
+}

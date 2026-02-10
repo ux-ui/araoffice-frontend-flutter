@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2025-08-20]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[병무청 1]]>
+			</title>
+			<keyword>
+				<![CDATA[병무청]]>
+			</keyword>
+			<description>
+				<![CDATA[병무청]]>
+			</description>
+			<coverfile>
+				<![CDATA[mma_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[mma_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[병무청 2]]>
+			</title>
+			<keyword>
+				<![CDATA[병무청]]>
+			</keyword>
+			<description>
+				<![CDATA[병무청]]>
+			</description>
+			<coverfile>
+				<![CDATA[mma_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[mma_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[병무청 3]]>
+			</title>
+			<keyword>
+				<![CDATA[병무청]]>
+			</keyword>
+			<description>
+				<![CDATA[병무청]]>
+			</description>
+			<coverfile>
+				<![CDATA[mma_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[mma_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[병무청 4]]>
+			</title>
+			<keyword>
+				<![CDATA[병무청]]>
+			</keyword>
+			<description>
+				<![CDATA[병무청]]>
+			</description>
+			<coverfile>
+				<![CDATA[mma_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[mma_004.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

@@ -1,0 +1,83 @@
+정부부처 로고 폴더 재편성 보고서
+====================================
+작업 일시: 2025-08-21 01:02:09
+소스 경로: /Users/martinshin/BitioneProjects/crayon/web_author/정부부처로고PNG
+타겟 경로: /Users/martinshin/BitioneProjects/crayon/web_author/app/packages/common_assets/assets/templates/glogo
+
+폴더 매핑 정보:
+====================================
+
+1. 중앙행정기관 (부) 및 소속 기관:
+   대한민국정부 → government_main/government/
+   기획재정부 → moef_main/moef/
+   국세청 → moef_main/nts/
+   관세청 → moef_main/customs/
+   조달청 → moef_main/pps/
+   통계청 → moef_main/kostat/
+   교육부 → moe_main/moe/
+   과학기술정보통신부 → msit_main/msit/
+   외교부 → mofa_main/mofa/
+   통일부 → unikorea_main/unikorea/
+   법무부 → moj_main/moj/
+   검찰청 → moj_main/spo/
+   국방부 → mnd_main/mnd/
+   병무청 → mnd_main/mma/
+   방위사업청 → mnd_main/dapa/
+   행정안전부 → mois_main/mois/
+   경찰청 → mois_main/police/
+   소방청 → mois_main/nfa/
+   문화체육관광부 → mcst_main/mcst/
+   문화재청/국가유산청 → mcst_main/khs/
+   농림축산식품부 → mafra_main/mafra/
+   농촌진흥청 → mafra_main/rda/
+   산림청 → mafra_main/forest/
+   산업통상자원부 → motie_main/motie/
+   특허청 → motie_main/kipo/
+   보건복지부 → mohw_main/mohw/
+   질병관리청 → mohw_main/kdca/
+   환경부 → me_main/me/
+   기상청 → me_main/kma/
+   고용노동부 → moel_main/moel/
+   여성가족부 → mogef_main/mogef/
+   국토교통부 → molit_main/molit/
+   행정중심복합도시건설청 → molit_main/naacc/
+   새만금개발청 → molit_main/saemangeum/
+   해양수산부 → mof_main/mof/
+   해양경찰청 → mof_main/kcg/
+   중소벤처기업부 → mss_main/mss/
+   국가보훈부 → mpva_main/mpva/
+
+2. 국무총리 소속 기관:
+   국가인권위원회 → opm_sub_main/humanrights/
+   공정거래위원회 → opm_sub_main/cts/
+   금융위원회 → opm_sub_main/fsc/
+   국민권익위원회 → opm_sub_main/acrc/
+   방송통신위원회 → opm_sub_main/kcc/
+   원자력안전위원회 → opm_sub_main/nssc/
+   개인정보보호위원회 → opm_sub_main/pipc/
+   인사혁신처 → opm_sub_main/mpm/
+   법제처 → opm_sub_main/moleg/
+   식품의약품안전처 → opm_sub_main/mfds/
+
+3. 대통령 직속 기관:
+   대통령실 → president_main/president/
+   국가정보원 → president_main/nis/
+   대통령경호처 → president_main/pss/
+   감사원 → president_main/bai/
+   국무조정실/국무총리비서실 → president_main/opm/
+
+4. 독립 기관:
+   고위공직자범죄수사처 → independent_main/cio/
+   우주항공청 → independent_main/kasa/
+   재외동포청 → independent_main/oka/
+
+5. 기타:
+   기타 → etc_main/etc/
+
+파일 통계:
+====================================
+총 생성된 폴더 수: 82개
+총 복사된 PNG 파일 수: 478개
+총 복사된 XML 파일 수: 49개
+
+보고서 생성 완료: 2025-08-21 01:02:09

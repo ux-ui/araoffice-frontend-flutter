@@ -1,0 +1,131 @@
+{{flutter_js}}
+{{flutter_build_config}}
+
+/**
+ * 커스텀 Flutter 부트스트랩 스크립트
+ * CanvasKit 파일들을 로컬 canvaskit 폴더에서 로드하도록 설정
+ */
+
+// URL 쿼리 파라미터에서 렌더러 설정 가져오기
+const searchParams = new URLSearchParams(window.location.search);
+const renderer = searchParams.get('renderer') || 'canvaskit'; // 기본값은 canvaskit
+
+// 로딩 진행 상황 표시를 위한 요소 생성
+const loadingIndicator = document.createElement('div');
+loadingIndicator.id = 'flutter-loading-indicator';
+loadingIndicator.style.cssText = `
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  color: #333;
+  display: none;
+`;
+document.body.appendChild(loadingIndicator);
+
+function updateLoadingStatus(message) {
+  loadingIndicator.textContent = message;
+  loadingIndicator.style.display = 'block';
+}
+
+function hideLoadingIndicator() {
+  loadingIndicator.style.display = 'none';
+}
+
+// Flutter 앱 설정
+const flutterConfig = {
+  // CanvasKit 베이스 URL을 로컬 canvaskit 폴더로 설정
+  canvasKitBaseUrl: './canvaskit/',
+  
+  // 렌더러 설정 (canvaskit 또는 skwasm)
+  renderer: renderer,
+  
+  // CanvasKit 변형 설정
+  // auto: 브라우저에 최적화된 변형 자동 선택
+  // full: 모든 브라우저에서 작동하는 전체 변형
+  // chromium: Chromium 기반 브라우저용 작은 변형
+  canvasKitVariant: 'auto',
+  
+  // CPU 전용 렌더링 강제 (WebGL 비활성화)
+  canvasKitForceCpuOnly: false,
+  
+  // CanvasKit 렌더러의 최대 오버레이 서페이스 수
+  canvasKitMaximumSurfaces: 8,
+  
+  // 디버그 모드에서 시맨틱 노드 시각적 표시
+  debugShowSemanticNodes: false,
+  
+  // 앱의 진입점 베이스 URL
+  entryPointBaseUrl: '/web/',
+  
+  // Flutter가 렌더링될 HTML 요소 (설정하지 않으면 전체 페이지)
+  // hostElement: document.getElementById('flutter-app-container'),
+};
+
+console.log('Flutter 부트스트랩 시작 - 렌더러:', renderer);
+console.log('CanvasKit 베이스 URL:', flutterConfig.canvasKitBaseUrl);
+
+// Flutter 앱 로드
+_flutter.loader.load({
+  config: flutterConfig,
+  onEntrypointLoaded: async function(engineInitializer) {
+    try {
+      updateLoadingStatus('Flutter 엔진 초기화 중...');
+      
+      // Flutter 엔진 초기화
+      const appRunner = await engineInitializer.initializeEngine({
+        // 다중 뷰 모드 활성화 (필요한 경우)
+        multiViewEnabled: false,
+        
+        // 서비스 워커 설정
+        serviceWorkerSettings: {
+          serviceWorkerVersion: "{{flutter_service_worker_version}}",
+          serviceWorkerUrl: 'flutter_service_worker.js'
+        }
+      });
+
+      updateLoadingStatus('Flutter 앱 실행 중...');
+      
+      // Flutter 앱 실행
+      const flutterApp = await appRunner.runApp();
+      
+      // 로딩 인디케이터 숨기기
+      hideLoadingIndicator();
+      
+      console.log('Flutter 앱 로드 완료');
+      
+      // 스플래시 스크린 제거 (기존 스크립트와 연동)
+      if (window.removeSplashScreen) {
+        setTimeout(() => {
+          window.removeSplashScreen();
+        }, 1000);
+      }
+      
+      return flutterApp;
+      
+    } catch (error) {
+      console.error('Flutter 앱 로드 중 오류 발생:', error);
+      updateLoadingStatus('앱 로드 중 오류가 발생했습니다: ' + error.message);
+      
+      // 오류 발생 시 5초 후 로딩 인디케이터 숨기기
+      setTimeout(hideLoadingIndicator, 5000);
+      throw error;
+    }
+  }
+});
+
+// 전역 오류 핸들러
+window.addEventListener('error', function(event) {
+  console.error('전역 오류:', event.error);
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('처리되지 않은 Promise 거부:', event.reason);
+});

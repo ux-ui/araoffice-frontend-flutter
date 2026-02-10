@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright><![CDATA[Namo Interative, Inc.]]></copyright>
+		<creator><![CDATA[Namo Interative, Inc.]]></creator>
+		<generator><![CDATA[Namo PubtreeEditor 2.0]]></generator>
+		<date><![CDATA[2022-03-02]]></date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+		<title><![CDATA[캐릭터 1]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[1.png]]></coverfile>
+		<clipartfile><![CDATA[1.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 2]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[2.png]]></coverfile>
+		<clipartfile><![CDATA[2.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 3]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[3.png]]></coverfile>
+		<clipartfile><![CDATA[3.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 4]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[4.png]]></coverfile>
+		<clipartfile><![CDATA[4.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 5]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[5.png]]></coverfile>
+		<clipartfile><![CDATA[5.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 6]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[6.png]]></coverfile>
+		<clipartfile><![CDATA[6.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 7]]></title>
+		<keyword><![CDATA[캐릭터,남자,여자]]></keyword>
+		<description><![CDATA[나란히 서있는 남자 여자 캐릭터]]></description>
+		<coverfile><![CDATA[7.png]]></coverfile>
+		<clipartfile><![CDATA[7.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 8]]></title>
+		<keyword><![CDATA[캐릭터,남자,여자]]></keyword>
+		<description><![CDATA[나란히 서있는 남자 여자 캐릭터]]></description>
+		<coverfile><![CDATA[8.png]]></coverfile>
+		<clipartfile><![CDATA[8.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 9]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[9.png]]></coverfile>
+		<clipartfile><![CDATA[9.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 10]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[10.png]]></coverfile>
+		<clipartfile><![CDATA[10.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 11]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[11.png]]></coverfile>
+		<clipartfile><![CDATA[11.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 12]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[12.png]]></coverfile>
+		<clipartfile><![CDATA[12.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 13]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[13.png]]></coverfile>
+		<clipartfile><![CDATA[13.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 14]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[14.png]]></coverfile>
+		<clipartfile><![CDATA[14.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 15]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[15.png]]></coverfile>
+		<clipartfile><![CDATA[15.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 16]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[16.png]]></coverfile>
+		<clipartfile><![CDATA[16.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 17]]></title>
+		<keyword><![CDATA[캐릭터,단체]]></keyword>
+		<description><![CDATA[단체 캐릭터]]></description>
+		<coverfile><![CDATA[17.png]]></coverfile>
+		<clipartfile><![CDATA[17.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 18]]></title>
+		<keyword><![CDATA[캐릭터,남자,휴식]]></keyword>
+		<description><![CDATA[휴식하는 남자캐릭터]]></description>
+		<coverfile><![CDATA[18.png]]></coverfile>
+		<clipartfile><![CDATA[18.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 19]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[19.png]]></coverfile>
+		<clipartfile><![CDATA[19.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 20]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[20.png]]></coverfile>
+		<clipartfile><![CDATA[20.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 21]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[21.png]]></coverfile>
+		<clipartfile><![CDATA[21.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 22]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[22.png]]></coverfile>
+		<clipartfile><![CDATA[22.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 23]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[23.png]]></coverfile>
+		<clipartfile><![CDATA[23.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 24]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[24.png]]></coverfile>
+		<clipartfile><![CDATA[24.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 25]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[25.png]]></coverfile>
+		<clipartfile><![CDATA[25.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 26]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[26.png]]></coverfile>
+		<clipartfile><![CDATA[26.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 27]]></title>
+		<keyword><![CDATA[캐릭터,가족]]></keyword>
+		<description><![CDATA[가족 캐릭터]]></description>
+		<coverfile><![CDATA[27.png]]></coverfile>
+		<clipartfile><![CDATA[27.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 28]]></title>
+		<keyword><![CDATA[캐릭터,가족]]></keyword>
+		<description><![CDATA[가족 캐릭터]]></description>
+		<coverfile><![CDATA[28.png]]></coverfile>
+		<clipartfile><![CDATA[28.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 29]]></title>
+		<keyword><![CDATA[캐릭터,단체]]></keyword>
+		<description><![CDATA[단체 캐릭터]]></description>
+		<coverfile><![CDATA[29.png]]></coverfile>
+		<clipartfile><![CDATA[29.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 30]]></title>
+		<keyword><![CDATA[캐릭터,단체]]></keyword>
+		<description><![CDATA[단체 캐릭터]]></description>
+		<coverfile><![CDATA[30.png]]></coverfile>
+		<clipartfile><![CDATA[30.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 31]]></title>
+		<keyword><![CDATA[캐릭터,가족]]></keyword>
+		<description><![CDATA[가족 캐릭터]]></description>
+		<coverfile><![CDATA[31.png]]></coverfile>
+		<clipartfile><![CDATA[31.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 32]]></title>
+		<keyword><![CDATA[캐릭터,여자,자전거]]></keyword>
+		<description><![CDATA[자전거 타는 여자 캐릭터]]></description>
+		<coverfile><![CDATA[32.png]]></coverfile>
+		<clipartfile><![CDATA[32.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 33]]></title>
+		<keyword><![CDATA[캐릭터,여자,강아지,산책]]></keyword>
+		<description><![CDATA[강아지와 산책하는 여자 캐릭터]]></description>
+		<coverfile><![CDATA[character-01.png]]></coverfile>
+		<clipartfile><![CDATA[character-01.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 34]]></title>
+		<keyword><![CDATA[캐릭터,여자,남자]]></keyword>
+		<description><![CDATA[독서하는 여자와 낮잠자는 남자 캐릭터]]></description>
+		<coverfile><![CDATA[character-02.png]]></coverfile>
+		<clipartfile><![CDATA[character-02.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 35]]></title>
+		<keyword><![CDATA[캐릭터,여자,남자,기타]]></keyword>
+		<description><![CDATA[기타치는 남자와 듣고 있는 여자 캐릭터]]></description>
+		<coverfile><![CDATA[character-03.png]]></coverfile>
+		<clipartfile><![CDATA[character-03.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 36]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[character-04.png]]></coverfile>
+		<clipartfile><![CDATA[character-04.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 37]]></title>
+		<keyword><![CDATA[캐릭터,남자,학생]]></keyword>
+		<description><![CDATA[학생 캐릭터]]></description>
+		<coverfile><![CDATA[character-05.png]]></coverfile>
+		<clipartfile><![CDATA[character-05.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 38]]></title>
+		<keyword><![CDATA[캐릭터,가족,여행]]></keyword>
+		<description><![CDATA[여행가는 가족 캐릭터]]></description>
+		<coverfile><![CDATA[character-06.png]]></coverfile>
+		<clipartfile><![CDATA[character-06.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 39]]></title>
+		<keyword><![CDATA[캐릭터,여자,해먹]]></keyword>
+		<description><![CDATA[해먹에 누워있는 여자 캐릭터]]></description>
+		<coverfile><![CDATA[character-07.png]]></coverfile>
+		<clipartfile><![CDATA[character-07.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 40]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[하얀색 여자 캐릭터]]></description>
+		<coverfile><![CDATA[character-08.png]]></coverfile>
+		<clipartfile><![CDATA[character-08.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 41]]></title>
+		<keyword><![CDATA[캐릭터,여자]]></keyword>
+		<description><![CDATA[여자 캐릭터]]></description>
+		<coverfile><![CDATA[character-09.png]]></coverfile>
+		<clipartfile><![CDATA[character-09.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 42]]></title>
+		<keyword><![CDATA[캐릭터,남자]]></keyword>
+		<description><![CDATA[남자 캐릭터]]></description>
+		<coverfile><![CDATA[character-10.png]]></coverfile>
+		<clipartfile><![CDATA[character-10.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 43]]></title>
+		<keyword><![CDATA[캐릭터,새집]]></keyword>
+		<description><![CDATA[새집]]></description>
+		<coverfile><![CDATA[character-11.png]]></coverfile>
+		<clipartfile><![CDATA[character-11.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 44]]></title>
+		<keyword><![CDATA[캐릭터,자전거]]></keyword>
+		<description><![CDATA[자전거]]></description>
+		<coverfile><![CDATA[character-12.png]]></coverfile>
+		<clipartfile><![CDATA[character-12.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 45]]></title>
+		<keyword><![CDATA[캐릭터,남자,자전거]]></keyword>
+		<description><![CDATA[자전거 타는 남자 캐릭터]]></description>
+		<coverfile><![CDATA[character-13.png]]></coverfile>
+		<clipartfile><![CDATA[character-13.png]]></clipartfile>
+		</templatedata>
+		<templatedata>
+		<title><![CDATA[캐릭터 46]]></title>
+		<keyword><![CDATA[캐릭터,여자,자전거]]></keyword>
+		<description><![CDATA[자전가 타는 여자 캐릭터]]></description>
+		<coverfile><![CDATA[character-14.png]]></coverfile>
+		<clipartfile><![CDATA[character-14.png]]></clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

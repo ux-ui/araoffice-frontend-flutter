@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2025-08-20]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[경찰청 1]]>
+			</title>
+			<keyword>
+				<![CDATA[경찰청]]>
+			</keyword>
+			<description>
+				<![CDATA[경찰청]]>
+			</description>
+			<coverfile>
+				<![CDATA[police_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[police_001.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>

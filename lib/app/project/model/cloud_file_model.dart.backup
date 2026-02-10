@@ -1,0 +1,270 @@
+import 'package:flutter/material.dart';
+
+// 새로운 클라우드 파일 모델
+class CloudFileModel {
+  final String fileId;
+  final String? parentFileId;
+  final int resourceLocation;
+  final int fileSize;
+  final String fileName;
+  final String filePath;
+  final String fileType;
+  final DateTime createdTime;
+  final DateTime modifiedTime;
+  final DateTime accessedTime;
+  final List<String> statuses;
+  final bool hasPermission;
+  final String? permissionRootFileId;
+  final bool shared;
+  final String? shareRootFileId;
+
+  CloudFileModel({
+    required this.fileId,
+    this.parentFileId,
+    required this.resourceLocation,
+    required this.fileSize,
+    required this.fileName,
+    required this.filePath,
+    required this.fileType,
+    required this.createdTime,
+    required this.modifiedTime,
+    required this.accessedTime,
+    required this.statuses,
+    required this.hasPermission,
+    this.permissionRootFileId,
+    required this.shared,
+    this.shareRootFileId,
+  });
+
+  // JSON에서 생성
+  factory CloudFileModel.fromJson(Map<String, dynamic> json) {
+    return CloudFileModel(
+      fileId: json['fileId'] ?? '',
+      parentFileId: json['parentFileId'],
+      resourceLocation: json['resourceLocation'] ?? 0,
+      fileSize: json['fileSize'] ?? 0,
+      fileName: json['fileName'] ?? '',
+      filePath: json['filePath'] ?? '',
+      fileType: json['fileType'] ?? '',
+      createdTime:
+          DateTime.tryParse(json['createdTime'] ?? '') ?? DateTime.now(),
+      modifiedTime:
+          DateTime.tryParse(json['modifiedTime'] ?? '') ?? DateTime.now(),
+      accessedTime:
+          DateTime.tryParse(json['accessedTime'] ?? '') ?? DateTime.now(),
+      statuses: List<String>.from(json['statuses'] ?? []),
+      hasPermission: json['hasPermission'] ?? false,
+      permissionRootFileId: json['permissionRootFileId'],
+      shared: json['shared'] ?? false,
+      shareRootFileId: json['shareRootFileId'],
+    );
+  }
+
+  /// 네이버웍스 API 응답을 CloudFileModel로 변환
+  factory CloudFileModel.fromNaverWorksJson(Map<String, dynamic> json) {
+    return CloudFileModel(
+      fileId: json['fileId'] ?? '',
+      parentFileId: json['parentFileId'],
+      resourceLocation: 0, // 네이버웍스는 resourceLocation 없음
+      fileSize: json['fileSize'] ?? 0,
+      fileName: json['fileName'] ?? '',
+      filePath: json['filePath'] ?? '',
+      fileType: _mapFileType(json['fileType']),
+      createdTime: _parseDateTime(json['createdTime']) ?? DateTime.now(),
+      modifiedTime: _parseDateTime(json['modifiedTime']) ?? DateTime.now(),
+      accessedTime: _parseDateTime(json['accessedTime']) ?? DateTime.now(),
+      statuses: [], // 네이버웍스는 statuses 없음
+      hasPermission: json['hasPermission'] ?? false,
+      permissionRootFileId: json['permissionRootFileId'],
+      shared: json['shared'] ?? false,
+      shareRootFileId: json['shareRootFileId'],
+    );
+  }
+
+  /// 네이버웍스 파일 타입을 내부 파일 타입으로 매핑
+  static String _mapFileType(String? naverWorksType) {
+    if (naverWorksType == null) return 'FILE';
+
+    switch (naverWorksType.toLowerCase()) {
+      case 'folder':
+        return 'FOLDER';
+      case 'document':
+        return 'DOC';
+      case 'spreadsheet':
+        return 'XLS';
+      case 'presentation':
+        return 'PPT';
+      case 'image':
+        return 'IMG';
+      case 'video':
+        return 'VIDEO';
+      case 'audio':
+        return 'AUDIO';
+      default:
+        return 'FILE';
+    }
+  }
+
+  /// 네이버웍스 날짜 문자열을 DateTime으로 변환
+  static DateTime? _parseDateTime(String? dateString) {
+    if (dateString == null) return null;
+
+    try {
+      return DateTime.parse(dateString);
+    } catch (e) {
+      debugPrint('날짜 파싱 실패: $dateString, 오류: $e');
+      return null;
+    }
+  }
+
+  // 폴더인지 확인 (fileType이 FOLDER인 경우)
+  bool get isFolder => fileType == 'FOLDER';
+
+  // 파일인지 확인
+  bool get isFile => !isFolder;
+
+  // 파일 크기를 읽기 쉬운 형태로 변환
+  String get readableFileSize {
+    if (fileSize < 1024) return '$fileSize B';
+    if (fileSize < 1024 * 1024)
+      return '${(fileSize / 1024).toStringAsFixed(1)} KB';
+    if (fileSize < 1024 * 1024 * 1024)
+      return '${(fileSize / (1024 * 1024)).toStringAsFixed(1)} MB';
+    return '${(fileSize / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  // 파일 타입에 따른 아이콘 반환
+  IconData get fileTypeIcon {
+    switch (fileType.toUpperCase()) {
+      case 'FOLDER':
+        return Icons.folder;
+      case 'DOC':
+      case 'DOCX':
+        return Icons.description;
+      case 'PDF':
+        return Icons.picture_as_pdf;
+      case 'TXT':
+        return Icons.text_snippet;
+      case 'XLS':
+      case 'XLSX':
+        return Icons.table_chart;
+      case 'PPT':
+      case 'PPTX':
+        return Icons.slideshow;
+      case 'JPG':
+      case 'JPEG':
+      case 'PNG':
+      case 'GIF':
+      case 'IMG':
+        return Icons.image;
+      case 'MP4':
+      case 'AVI':
+      case 'MOV':
+      case 'VIDEO':
+        return Icons.video_file;
+      case 'MP3':
+      case 'WAV':
+      case 'AUDIO':
+        return Icons.audio_file;
+      case 'ZIP':
+      case 'RAR':
+        return Icons.archive;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  // 파일 타입에 따른 색상 반환
+  Color get fileTypeColor {
+    switch (fileType.toUpperCase()) {
+      case 'FOLDER':
+        return Colors.blue;
+      case 'DOC':
+      case 'DOCX':
+        return Colors.blue[700]!;
+      case 'PDF':
+        return Colors.red;
+      case 'TXT':
+        return Colors.grey[600]!;
+      case 'XLS':
+      case 'XLSX':
+        return Colors.green[600]!;
+      case 'PPT':
+      case 'PPTX':
+        return Colors.orange;
+      case 'JPG':
+      case 'JPEG':
+      case 'PNG':
+      case 'GIF':
+      case 'IMG':
+        return Colors.purple;
+      case 'MP4':
+      case 'AVI':
+      case 'MOV':
+      case 'VIDEO':
+        return Colors.red[400]!;
+      case 'MP3':
+      case 'WAV':
+      case 'AUDIO':
+        return Colors.teal;
+      case 'ZIP':
+      case 'RAR':
+        return Colors.amber;
+      default:
+        return Colors.grey;
+    }
+  }
+}
+
+// 클라우드 파일 응답 모델
+class CloudFileResponse {
+  final List<CloudFileModel> files;
+  final CloudResponseMetaData responseMetaData;
+
+  CloudFileResponse({
+    required this.files,
+    required this.responseMetaData,
+  });
+
+  factory CloudFileResponse.fromJson(Map<String, dynamic> json) {
+    return CloudFileResponse(
+      files: (json['files'] as List?)
+              ?.map((file) => CloudFileModel.fromJson(file))
+              .toList() ??
+          [],
+      responseMetaData:
+          CloudResponseMetaData.fromJson(json['responseMetaData'] ?? {}),
+    );
+  }
+
+  /// 네이버웍스 API 응답을 CloudFileResponse로 변환
+  factory CloudFileResponse.fromNaverWorksJson(Map<String, dynamic> json) {
+    final files = <CloudFileModel>[];
+
+    if (json['files'] != null) {
+      for (final fileJson in json['files']) {
+        files.add(CloudFileModel.fromNaverWorksJson(fileJson));
+      }
+    }
+
+    return CloudFileResponse(
+      files: files,
+      responseMetaData: CloudResponseMetaData(
+        nextCursor: json['cursor'],
+      ),
+    );
+  }
+}
+
+// 응답 메타데이터 모델
+class CloudResponseMetaData {
+  final String? nextCursor;
+
+  CloudResponseMetaData({this.nextCursor});
+
+  factory CloudResponseMetaData.fromJson(Map<String, dynamic> json) {
+    return CloudResponseMetaData(
+      nextCursor: json['nextCursor'],
+    );
+  }
+}

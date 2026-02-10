@@ -1,0 +1,10 @@
+{
+  "showGrid": true,
+  "gridStyle": "dotted",
+  "gridSize": 20,
+  "snapToGrid": true,
+  "snapToObject": true,
+  "showRuler": false,
+  "enableUndo": true,
+  "undoDepth": 10
+}

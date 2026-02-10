@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templateinfo>
+	<metadata>
+		<copyright>
+			<![CDATA[Namo Interative, Inc.]]>
+		</copyright>
+		<creator>
+			<![CDATA[Namo Interative, Inc.]]>
+		</creator>
+		<generator>
+			<![CDATA[Namo PubtreeEditor 2.0]]>
+		</generator>
+		<date>
+			<![CDATA[2025-08-15]]>
+		</date>
+	</metadata>
+	<templatedatas>
+		<templatedata>
+			<title>
+				<![CDATA[원자력안전위원회 1]]>
+			</title>
+			<keyword>
+				<![CDATA[원자력안전위원회,원자력,안전]]>
+			</keyword>
+			<description>
+				<![CDATA[원자력안전위원회]]>
+			</description>
+			<coverfile>
+				<![CDATA[nssc_001.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nssc_001.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[원자력안전위원회 2]]>
+			</title>
+			<keyword>
+				<![CDATA[원자력안전위원회,원자력,안전]]>
+			</keyword>
+			<description>
+				<![CDATA[원자력안전위원회]]>
+			</description>
+			<coverfile>
+				<![CDATA[nssc_002.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nssc_002.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[원자력안전위원회 3]]>
+			</title>
+			<keyword>
+				<![CDATA[원자력안전위원회,원자력,안전]]>
+			</keyword>
+			<description>
+				<![CDATA[원자력안전위원회]]>
+			</description>
+			<coverfile>
+				<![CDATA[nssc_003.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nssc_003.png]]>
+			</clipartfile>
+		</templatedata>
+		<templatedata>
+			<title>
+				<![CDATA[원자력안전위원회 4]]>
+			</title>
+			<keyword>
+				<![CDATA[원자력안전위원회,원자력,안전]]>
+			</keyword>
+			<description>
+				<![CDATA[원자력안전위원회]]>
+			</description>
+			<coverfile>
+				<![CDATA[nssc_004.png]]>
+			</coverfile>
+			<clipartfile>
+				<![CDATA[nssc_004.png]]>
+			</clipartfile>
+		</templatedata>
+	</templatedatas>
+</templateinfo>
