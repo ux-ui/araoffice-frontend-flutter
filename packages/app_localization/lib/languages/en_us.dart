@@ -254,6 +254,8 @@ const Map<String, String> enUs = {
   'editor': 'Editor',
   'no_editor': 'No Editor',
 
+  'connected_user_list_online': 'Online Users %s',
+
   // Languages
   'korean': 'Korean',
   'english': 'English',

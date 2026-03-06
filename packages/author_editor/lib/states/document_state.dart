@@ -10,6 +10,9 @@ class DocumentState {
   /// 현재 프로젝트의 고유 식별자
   final rxProjectId = ''.obs;
 
+  // 현재 유저 이름
+  final rxDisplayName = 'anonymous'.obs;
+
   /// 현재 프로젝트의 시작 페이지 ID
   final rxStartPageId = ''.obs;
 
@@ -52,6 +55,9 @@ class DocumentState {
 
   /// 현재 프로젝트의 공유 설정
   final rxProjectSharePermission = ProjectAuthType.onlyMe.obs;
+  bool get hasSharedPermission =>
+      rxProjectSharePermission.value == ProjectAuthType.publicLink ||
+      rxProjectSharePermission.value == ProjectAuthType.userLink;
 
   // ===== URL 관리 필드들 =====
   /// 기본 API URL
@@ -85,6 +91,10 @@ class DocumentState {
   void updateDocumentSize(int width, int height) {
     rxDocumentSizeWidth.value = width;
     rxDocumentSizeHeight.value = height;
+  }
+
+  void updateDisplayName(String displayName) {
+    rxDisplayName.value = displayName.isEmpty ? 'anonymous' : displayName;
   }
 
   void setPageProperties() {

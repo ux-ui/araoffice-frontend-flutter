@@ -1,4 +1,5 @@
 // import 'package:app/app/project/controller/project_controller.dart';
+import 'package:api/api.dart';
 import 'package:app_ui/app_ui.dart';
 import 'package:author_editor/dialog/editor_new_document_dialog.dart';
 import 'package:author_editor/dialog/editor_project_setting_dialog.dart';
@@ -7,6 +8,7 @@ import 'package:author_editor/editor_event_manager.dart';
 import 'package:author_editor/engine/editor_integration.dart';
 import 'package:author_editor/panel/page_attribute_panel.dart';
 import 'package:author_editor/panel/page_panel.dart';
+import 'package:author_editor/view/whiteboard_edit_popup.dart';
 import 'package:author_editor/vulcan_editor_controller.dart';
 import 'package:author_editor/web_socket/user_cursor_widget.dart';
 import 'package:common_util/common_util.dart';
@@ -15,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import 'data/datas.dart';
 import 'dialog/editor_template_dialog.dart';
@@ -54,6 +57,7 @@ class VulcanEditor extends StatefulWidget {
   final ValueChanged<VulcanTxtData>? onExportTxt;
 
   final VoidCallback? onCloudConnection;
+
   final void Function(VulcanEpubData, {String? folderId})? onUploadEpub;
   final void Function(VulcanXhtmlData, {String? folderId})? onUploadXhtml;
   final void Function(VulcanTxtData, {String? folderId})? onUploadTxt;
@@ -88,6 +92,8 @@ class VulcanEditor extends StatefulWidget {
     this.templateId,
     this.initialFolderId,
     this.isDownload = false,
+    this.tenantSetting,
+
     this.onCreatedProject,
     this.onCreatePage,
     this.onDeletePage,
@@ -106,6 +112,7 @@ class VulcanEditor extends StatefulWidget {
     this.onExportTxt,
     this.onExportXhtml,
     this.onCloudConnection,
+
     this.onUploadEpub,
     this.onUploadXhtml,
     this.onUploadTxt,
@@ -125,7 +132,6 @@ class VulcanEditor extends StatefulWidget {
     this.onUpdateListNumbering,
     this.onRemoveTempSaveData,
     this.onCreateThumbnail,
-    this.tenantSetting,
   });
 
   @override
@@ -137,6 +143,29 @@ class _VulcanEditorState extends State<VulcanEditor> {
   late final EditorEventManager eventManager;
   late String? templateId;
 
+  bool _isHandlingBackNavigation = false;
+
+  // dialog 관련 변수
+  bool _isShowNewDocumentDialog = false;
+  bool _isShowTemplateDialog = false;
+  bool _isShowProjectSettingDialog = false;
+
+  Future<void> _handlePopNavigation() async {
+    if (_isHandlingBackNavigation) return;
+    if (!mounted) return;
+
+    _isHandlingBackNavigation = true;
+    try {
+      controller.stopCoOpCount();
+      await controller.releasePermissionThenNotifyTreeListOnExit();
+      if (mounted) {
+        context.pop();
+      }
+    } finally {
+      _isHandlingBackNavigation = false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -145,12 +174,19 @@ class _VulcanEditorState extends State<VulcanEditor> {
 
     controller = Get.put(VulcanEditorController()
       ..display(vulcanEditorData: widget.data, baseUrl: widget.baseUrl));
+    eventManager = Get.put(EditorEventManager());
+    // router에서 미리 생성하는 경우
+    // controller = Get.find<VulcanEditorController>();
+    // controller.display(vulcanEditorData: widget.data, baseUrl: widget.baseUrl);
+    // eventManager = Get.find<EditorEventManager>();
 
     controller.onProjectAccessDenied = () {
       if (mounted && context.mounted) _showUnauthorizedDialog(context);
     };
 
-    eventManager = Get.put(EditorEventManager());
+    controller.onProjectAccessDenied = () {
+      if (mounted && context.mounted) _showUnauthorizedDialog(context);
+    };
 
     // controller.tenantSetting.value = widget.tenantSetting ?? {};
     // controller.govElementLogoStatus.value =
@@ -165,6 +201,8 @@ class _VulcanEditorState extends State<VulcanEditor> {
     //     widget.tenantSetting?['accordionWidgetStatus'] ?? false;
 
     controller.initTenantSetting(widget.tenantSetting ?? {});
+
+    controller.onUpdate = () => _checkProjectIdAndShowDialog(context);
 
     ever(controller.createPageTrigger, (Map<String, String?> value) async {
       if (value.isNotEmpty) {
@@ -609,11 +647,10 @@ class _VulcanEditorState extends State<VulcanEditor> {
       // }
 
       // 1. 프로젝트가 공유된 상태에서 2.권한이 있는 상태로 3.편집중인 사람이 없을 때 진행
-      if (controller.documentState.rxProjectSharePermission.value ==
-              ProjectAuthType.publicLink ||
-          controller.documentState.rxProjectSharePermission.value ==
-              ProjectAuthType.userLink) {
-        if (controller.rxEditingUserId.value == "null") {
+      if (controller.documentState.hasSharedPermission) {
+        // if (controller.rxEditingUserId.value == "null") {
+        if (controller.rxEditingUserId.value.isEmpty ||
+            controller.rxEditingUserId.value == 'null') {
           if (controller.documentState.rxUserId.isNotEmpty) {
             final permission = await controller.isPermission();
             if (permission == true) {
@@ -637,6 +674,8 @@ class _VulcanEditorState extends State<VulcanEditor> {
           controller.startCoOpCount(
               seconds: controller.rxSettingEditCount.value);
         }
+        debugPrint(
+            'reset coop count : ${controller.documentState.rxUserId.value} == ${controller.rxEditingUserId.value}');
       }
     });
     controller.checkEnabledEditor();
@@ -651,6 +690,8 @@ class _VulcanEditorState extends State<VulcanEditor> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       controller.documentState.rxProjectId.value = widget.data.projectId ?? '';
+      controller.documentState.rxDisplayName.value =
+          widget.data.userDisplayName ?? '';
       controller.documentState.rxPageEditable.value =
           widget.data.isEdit ?? false;
       controller.documentState.rxProjectSharePermission.value =
@@ -676,527 +717,397 @@ class _VulcanEditorState extends State<VulcanEditor> {
   @override
   void dispose() {
     eventManager.emit(EditorEventType.dispose, null); // 에디터 종료 이벤트 발생
-    controller.disposeWebSocket();
-    Get.delete<VulcanEditorController>();
+    // controller.disposeWebSocket();
+    if (Get.isRegistered<VulcanEditorController>()) {
+      Get.delete<VulcanEditorController>();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    controller.onUpdate = () => _checkProjectIdAndShowDialog(context);
+    // controller.onUpdate = () => _checkProjectIdAndShowDialog(context);
 
     return GetBuilder<VulcanEditorController>(
-      builder: (_) => Scaffold(
-        body: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-          // 빌드 중 상태 변경 방지: 프레임 종료 후 상태 갱신
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              controller.updateEditorPosition();
-            }
-          });
-          return Stack(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Stack(children: [
-                    EditorAppBar(),
-                  ]),
-                  Expanded(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        EditorNavigationNail(
-                          quizWidgetStatus: controller.quizWidgetStatus.value,
-                          onSelected: (Widget panel) {
-                            controller.uiState.isLeftDrawerOpen.value = true;
-                            controller.rxPanel.value = panel;
-                            controller.rxViewColumn.value = true;
-                          },
-                        ),
-                        Obx(() => AnimatedContainerDrawer(
-                              drawerWidth: 326,
-                              isOpen: controller.uiState.isLeftDrawerOpen.value,
-                              onClose: controller.toggleLeftDrawer,
-                              child: SizedBox(child: controller.rxPanel.value),
-                            )),
-                        Expanded(
-                          child: LayoutBuilder(
-                            builder: (context, editorConstraints) {
-                              return Stack(
-                                children: [
-                                  Obx(
-                                    () => (controller
-                                            .rxPageUrl.value.isNotEmpty)
-                                        ? Container(
-                                            color: Colors.black45,
-                                            child: Stack(
-                                              children: [
-                                                Center(
-                                                  child: EditorIntegration(
-                                                    baseUrl: AutoConfig
-                                                        .instance
-                                                        .domainType
-                                                        .originWithPath,
-                                                    langUrl:
-                                                        controller.getLangUrl(
-                                                      widget.baseUrl,
+      builder: (_) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) async {
+          if (didPop || _isHandlingBackNavigation) return;
+          await _handlePopNavigation();
+        },
+        child: Scaffold(
+          body: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+            // 빌드 중 상태 변경 방지: 프레임 종료 후 상태 갱신
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                controller.updateEditorPosition();
+              }
+            });
+            return Stack(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Stack(children: [
+                      EditorAppBar(),
+                    ]),
+                    Expanded(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          EditorNavigationNail(
+                            quizWidgetStatus: controller.quizWidgetStatus.value,
+                            onSelected: (Widget panel) {
+                              controller.uiState.isLeftDrawerOpen.value = true;
+                              controller.rxPanel.value = panel;
+                              controller.rxViewColumn.value = true;
+                            },
+                          ),
+                          Obx(() => AnimatedContainerDrawer(
+                                drawerWidth: 326,
+                                isOpen:
+                                    controller.uiState.isLeftDrawerOpen.value,
+                                onClose: controller.toggleLeftDrawer,
+                                child:
+                                    SizedBox(child: controller.rxPanel.value),
+                              )),
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, editorConstraints) {
+                                return Stack(
+                                  children: [
+                                    Obx(
+                                      () => (controller
+                                              .rxPageUrl.value.isNotEmpty)
+                                          ? Container(
+                                              color: Colors.black45,
+                                              child: Stack(
+                                                children: [
+                                                  Center(
+                                                    child: EditorIntegration(
+                                                      baseUrl: AutoConfig
+                                                          .instance
+                                                          .domainType
+                                                          .originWithPath,
+                                                      langUrl:
+                                                          controller.getLangUrl(
+                                                        widget.baseUrl,
+                                                      ),
+                                                      fontUrl: widget.fontUrl,
+                                                      onLoad: (editor) =>
+                                                          controller
+                                                              .setEditorLoad(
+                                                                  editor),
+                                                      onPageLoad: (page) =>
+                                                          controller
+                                                              .onPageLoad(page),
+                                                      onSingleSelected: (node) =>
+                                                          controller.loadAttributePanel(
+                                                              EditorCallBackType
+                                                                  .singleSelected,
+                                                              node),
+                                                      onCaretSelected: (node,
+                                                          html, capturePage) {
+                                                        controller
+                                                            .triggerTempSave(
+                                                          html,
+                                                          capturePage,
+                                                        );
+                                                        controller
+                                                            .loadAttributePanel(
+                                                                EditorCallBackType
+                                                                    .caretSelected,
+                                                                node);
+                                                      },
+                                                      onNoneSelected:
+                                                          (html, capturePage) {
+                                                        controller
+                                                            .triggerUpdatePageContent(
+                                                                html,
+                                                                capturePage);
+
+                                                        controller
+                                                            .loadAttributePanel(
+                                                                EditorCallBackType
+                                                                    .noneSelected,
+                                                                null);
+                                                      },
+                                                      onMultiSelected:
+                                                          (nodes) => controller
+                                                              .loadMultiSelectedAttributePanel(
+                                                                  nodes),
+                                                      onCellSelected: (table,
+                                                              nodes) =>
+                                                          controller
+                                                              .loadCellSelectedAttributePanel(
+                                                                  table, nodes),
+                                                      onNodeRectChanged:
+                                                          (nodes) => controller
+                                                              .onNodeRectChanged(
+                                                                  nodes),
+                                                      onStyleChanged:
+                                                          (node, name, value) {
+                                                        debugPrint(
+                                                            'onStyleChanged : $name / $value');
+                                                      },
+                                                      onAttributeChanged:
+                                                          (node, name, value) {
+                                                        debugPrint(
+                                                            'onAttributeChanged : $name / $value');
+                                                      },
+                                                      onNodeInserted: (node) {
+                                                        controller
+                                                            .onNodeInserted(
+                                                                node);
+                                                      },
+                                                      onNodeRemoved: (node) {
+                                                        controller
+                                                            .onNodeRemoved(
+                                                                node);
+                                                      },
+                                                      onUndoStackChanged: (canUndo,
+                                                              canRedo) =>
+                                                          controller
+                                                              .onUndoStackChanged(
+                                                                  canUndo,
+                                                                  canRedo),
+                                                      onPointerMove: (editorX,
+                                                              editorY,
+                                                              windowX,
+                                                              windowY,
+                                                              isInEditor) =>
+                                                          controller
+                                                              .onMouseMove(
+                                                                  editorX,
+                                                                  editorY,
+                                                                  windowX,
+                                                                  windowY,
+                                                                  isInEditor),
+                                                      onWidgetSelectionChanged: (node,
+                                                              id, properties) =>
+                                                          controller
+                                                              .loadWidgetSelectedAttributePanel(
+                                                                  node,
+                                                                  id,
+                                                                  properties),
+                                                      onFrameClick: () => null,
+                                                      onDocumentChanged:
+                                                          (node) => controller
+                                                              .onDocumentChanged(
+                                                                  node),
                                                     ),
-                                                    fontUrl: widget.fontUrl,
-                                                    onLoad: (editor) =>
-                                                        controller
-                                                            .setEditorLoad(
-                                                                editor),
-                                                    onPageLoad: (page) =>
-                                                        controller
-                                                            .onPageLoad(page),
-                                                    onSingleSelected: (node) =>
-                                                        controller.loadAttributePanel(
-                                                            EditorCallBackType
-                                                                .singleSelected,
-                                                            node),
-                                                    onCaretSelected: (node,
-                                                        html, capturePage) {
-                                                      controller
-                                                          .triggerTempSave(
-                                                        html,
-                                                        capturePage,
-                                                      );
-                                                      controller
-                                                          .loadAttributePanel(
-                                                              EditorCallBackType
-                                                                  .caretSelected,
-                                                              node);
-                                                    },
-                                                    onNoneSelected:
-                                                        (html, capturePage) {
-                                                      controller
-                                                          .triggerUpdatePageContent(
-                                                              html,
-                                                              capturePage);
-                                                      controller
-                                                          .loadAttributePanel(
-                                                              EditorCallBackType
-                                                                  .noneSelected,
-                                                              null);
-                                                    },
-                                                    onMultiSelected: (nodes) =>
-                                                        controller
-                                                            .loadMultiSelectedAttributePanel(
-                                                                nodes),
-                                                    onCellSelected: (table,
-                                                            nodes) =>
-                                                        controller
-                                                            .loadCellSelectedAttributePanel(
-                                                                table, nodes),
-                                                    onNodeRectChanged:
-                                                        (nodes) => controller
-                                                            .onNodeRectChanged(
-                                                                nodes),
-                                                    onStyleChanged:
-                                                        (node, name, value) {
-                                                      debugPrint(
-                                                          'onStyleChanged : $name / $value');
-                                                    },
-                                                    onAttributeChanged:
-                                                        (node, name, value) {
-                                                      debugPrint(
-                                                          'onAttributeChanged : $name / $value');
-                                                    },
-                                                    onNodeInserted: (node) {
-                                                      controller
-                                                          .onNodeInserted(node);
-                                                    },
-                                                    onNodeRemoved: (node) {
-                                                      controller
-                                                          .onNodeRemoved(node);
-                                                    },
-                                                    onUndoStackChanged: (canUndo,
-                                                            canRedo) =>
-                                                        controller
-                                                            .onUndoStackChanged(
-                                                                canUndo,
-                                                                canRedo),
-                                                    onPointerMove: (editorX,
-                                                            editorY,
-                                                            windowX,
-                                                            windowY,
-                                                            isInEditor) =>
-                                                        controller.onMouseMove(
-                                                            editorX,
-                                                            editorY,
-                                                            windowX,
-                                                            windowY,
-                                                            isInEditor),
-                                                    onWidgetSelectionChanged: (node,
-                                                            id, properties) =>
-                                                        controller
-                                                            .loadWidgetSelectedAttributePanel(
-                                                                node,
-                                                                id,
-                                                                properties),
-                                                    onFrameClick: () => null,
-                                                    onDocumentChanged: (node) =>
-                                                        controller
-                                                            .onDocumentChanged(
-                                                                node),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                  if (widget.data.projectAuth ==
-                                          ProjectAuthType.publicLink.value ||
-                                      widget.data.projectAuth ==
-                                          ProjectAuthType.userLink.value)
-                                    Obx(() => Stack(
-                                          children: controller.cursors.entries
-                                              .map((entry) {
-                                            if (controller.documentState
-                                                        .rxUserId.value ==
-                                                    entry.key ||
-                                                controller.anonymousUserId ==
-                                                    entry.key) {
-                                              return const Positioned(
-                                                  left: 0,
-                                                  top: 0,
-                                                  right: 0,
-                                                  bottom: 0,
-                                                  child: SizedBox.shrink());
-                                            }
-                                            return entry.value['x'] == 0 &&
-                                                    entry.value['y'] == 0
-                                                ? const SizedBox.shrink()
-                                                : UserCursorWidget(
-                                                    userId: entry.key,
-                                                    x: (entry.value['x']) ?? 0,
-                                                    y: entry.value['y'] ?? 0,
-                                                    diffX: (editorConstraints
-                                                                .maxWidth -
-                                                            controller
-                                                                    .documentState
-                                                                    .rxDocumentSizeWidth
-                                                                    .value *
-                                                                controller
-                                                                    .rxZoomValue
-                                                                    .value) /
-                                                        2,
-                                                    diffY: 24 *
-                                                        controller
-                                                            .rxZoomValue.value,
-                                                    scale: controller
-                                                        .rxZoomValue.value,
-                                                    showRuler: controller
-                                                        .rxShowRuler.value,
-                                                  );
-                                          }).toList(),
-                                        )),
-                                  Obx(() => !controller.rxViewColumn.value
-                                      ? Positioned(
-                                          left: 15,
-                                          top: 15,
-                                          child: SizedBox(
-                                            width: 50,
-                                            height: 50,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(4.0),
-                                              child: SizedBox(
-                                                width: 43,
-                                                child:
-                                                    VulcanXOutlinedButton.icon(
+                                                ],
+                                              ),
+                                            )
+                                          : const SizedBox.shrink(),
+                                    ),
+                                    if (widget.data.projectAuth ==
+                                            ProjectAuthType.publicLink.value ||
+                                        widget.data.projectAuth ==
+                                            ProjectAuthType.userLink.value)
+                                      Obx(() => Stack(
+                                            children: controller.cursors.entries
+                                                .map((entry) {
+                                              if (controller.documentState
+                                                          .rxUserId.value ==
+                                                      entry.key ||
+                                                  controller.anonymousUserId ==
+                                                      entry.key) {
+                                                return const Positioned(
+                                                    left: 0,
+                                                    top: 0,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    child: SizedBox.shrink());
+                                              }
+                                              return entry.value['x'] == 0 &&
+                                                      entry.value['y'] == 0
+                                                  ? const SizedBox.shrink()
+                                                  : UserCursorWidget(
+                                                      // displayName을 표시, 없으면 userId 사용
+                                                      userId: entry.value[
+                                                                      'displayName']
+                                                                  ?.toString()
+                                                                  .isNotEmpty ==
+                                                              true
+                                                          ? entry.value[
+                                                              'displayName']
+                                                          : entry.key,
+                                                      x: (entry.value['x']) ??
+                                                          0,
+                                                      y: entry.value['y'] ?? 0,
+                                                      diffX: (editorConstraints
+                                                                  .maxWidth -
+                                                              controller
+                                                                      .documentState
+                                                                      .rxDocumentSizeWidth
+                                                                      .value *
+                                                                  controller
+                                                                      .rxZoomValue
+                                                                      .value) /
+                                                          2,
+                                                      diffY: 24 *
+                                                          controller.rxZoomValue
+                                                              .value,
+                                                      scale: controller
+                                                          .rxZoomValue.value,
+                                                      showRuler: controller
+                                                          .rxShowRuler.value,
+                                                    );
+                                            }).toList(),
+                                          )),
+                                    Obx(() => !controller.rxViewColumn.value
+                                        ? Positioned(
+                                            left: 15,
+                                            top: 15,
+                                            child: SizedBox(
+                                              width: 50,
+                                              height: 50,
+                                              child: PointerInterceptor(
+                                                child: Padding(
                                                   padding:
-                                                      const EdgeInsets.all(7),
-                                                  icon: const Icon(
-                                                      Icons
-                                                          .view_column_outlined,
-                                                      size: 20),
-                                                  onPressed: () =>
-                                                      controller.viewColumn(),
-                                                  child:
-                                                      const SizedBox.shrink(),
+                                                      const EdgeInsets.all(4.0),
+                                                  child: SizedBox(
+                                                    width: 43,
+                                                    child: VulcanXOutlinedButton
+                                                        .icon(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              7),
+                                                      icon: const Icon(
+                                                          Icons
+                                                              .view_column_outlined,
+                                                          size: 20),
+                                                      onPressed: () =>
+                                                          controller
+                                                              .viewColumn(),
+                                                      child: const SizedBox
+                                                          .shrink(),
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        )
-                                      : const SizedBox.shrink()),
-                                  // 그리기 위젯
-                                  // Obx(() => Stack(
-                                  //       children: controller.cursors.entries
-                                  //           .map((entry) {
-                                  //         // if (controller.documentState
-                                  //         //             .rxUserId.value ==
-                                  //         //         entry.key ||
-                                  //         //     controller.anonymousUserId ==
-                                  //         //         entry.key) {
-                                  //         //   return const SizedBox.shrink();
-                                  //         // }
-
-                                  //         final allPoints = controller
-                                  //                 .cursorTrails[entry.key]
-                                  //                 ?.toList() ??
-                                  //             [];
-                                  //         final newPoints = controller
-                                  //                 .newCursorPoints[entry.key]
-                                  //                 ?.toList() ??
-                                  //             [];
-
-                                  //         return CursorTrailWidget(
-                                  //           userId: entry.key,
-                                  //           x: (entry.value['x']) ?? 0,
-                                  //           y: entry.value['y'] ?? 0,
-                                  //           diffX: (editorConstraints.maxWidth -
-                                  //                   controller
-                                  //                           .documentState
-                                  //                           .rxDocumentSizeWidth
-                                  //                           .value *
-                                  //                       controller.rxZoomValue
-                                  //                           .value) /
-                                  //               2,
-                                  //           diffY: 24 *
-                                  //               controller.rxZoomValue.value,
-                                  //           scale: controller.rxZoomValue.value,
-                                  //           showRuler:
-                                  //               controller.rxShowRuler.value,
-                                  //           points: allPoints,
-                                  //           newPoints: newPoints,
-                                  //           // cursorColor: Colors.red,
-                                  //           cursorColor:
-                                  //               getColorForUserId(entry.key),
-                                  //         );
-                                  //       }).toList(),
-                                  //     )),
-                                  // DraggablePopupMenuBar(
-                                  //   menuItems: [
-                                  //     IconButton(
-                                  //       icon: const Icon(Icons.brush),
-                                  //       onPressed: () async {
-                                  //         print('브러시 클릭');
-                                  //         // 브러시 동작 실행
-                                  //       },
-                                  //     ),
-                                  //     IconButton(
-                                  //       icon: const Icon(Icons.edit),
-                                  //       onPressed: () async {
-                                  //         print('연필 클릭');
-                                  //         // 연필 동작 실행
-                                  //       },
-                                  //     ),
-                                  //     IconButton(
-                                  //       icon: const Icon(Icons.color_lens),
-                                  //       onPressed: () async {
-                                  //         print('색상 클릭');
-                                  //         // 색상 선택 동작 실행
-                                  //       },
-                                  //     ),
-                                  //     IconButton(
-                                  //       icon: const Icon(Icons.delete),
-                                  //       onPressed: () async {
-                                  //         print('지우개 클릭');
-                                  //         // 지우개 동작 실행
-                                  //       },
-                                  //     ),
-                                  //     IconButton(
-                                  //       icon: const Icon(Icons.more_vert),
-                                  //       onPressed: () async {},
-                                  //     ),
-                                  //   ],
-                                  //   initialPosition: const Offset(100, 200),
-                                  //   isInteracting:
-                                  //       controller.rxPopupInteracting,
-                                  // ),
-                                ],
-                              );
-                            },
+                                          )
+                                        : const SizedBox.shrink()),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        Obx(() => AnimatedContainerDrawer(
-                              drawerWidth: 300,
-                              alignment: Alignment.topLeft,
-                              isOpen:
-                                  controller.uiState.isRightDrawerOpen.value,
-                              onClose: controller.toggleRightDrawer,
-                              child: SizedBox(
-                                child: controller.rxAttribute.value,
-                              ),
-                            )),
-                      ],
-                    ),
-                  )
-                ],
-              ),
-              // 다른 사용자들의 커서 표시
-              // Obx(() => Stack(
-              //       children: controller.cursors.entries.map((entry) {
-              //         if (controller.documentState.rxUserId.value ==
-              //                 entry.key ||
-              //             controller.anonymousUserId == entry.key) {
-              //           return const Positioned(
-              //               left: 0,
-              //               top: 0,
-              //               right: 0,
-              //               bottom: 0,
-              //               child: SizedBox.shrink());
-              //         }
-              //         return UserCursorWidget(
-              //           userId: entry.key,
-              //           x: (entry.value['x']) ?? 0,
-              //           y: entry.value['y'] ?? 0,
-              //           diffX: (constraints.maxWidth -
-              //                   (controller.rxDocumentSizeWidth.value *
-              //                       controller.rxZoomValue.value)) /
-              //               2,
-              //           diffY: (constraints.maxHeight -
-              //                   (controller.rxDocumentSizeHeight.value *
-              //                       controller.rxZoomValue.value)) /
-              //               2,
-              //           showRuler: controller.rxShowRuler.value,
-              //           scale: controller.rxZoomValue.value,
-              //         );
-              //       }).toList(),
-              //     )),
-
-              // 협업 대구 임시 주석 처리 - 추후 소켓 작업 후 해제 예정
-              // Obx(
-              //   () => controller.rxIsCoopMode.value
-              //       ? DraggablePopupMenuBar(
-              //           menuItems: [
-              //             Tooltip(
-              //               message: controller.isEditingStatus.value
-              //                   ? 'editing_user_status_true'.tr
-              //                   : 'editing_user'.trArgs(
-              //                       [controller.rxEditingDisplayName.value]),
-              //               child: controller.isEditingStatus.value
-              //                   ? Icon(
-              //                       Icons.circle,
-              //                       color: controller.isEditingStatus.value
-              //                           ? Colors.green
-              //                           : Colors.red,
-              //                     )
-              //                   : Row(
-              //                       spacing: 10,
-              //                       children: [
-              //                         CircleAvatar(
-              //                           radius: 16,
-              //                           backgroundColor: getColorForUserId(
-              //                               controller
-              //                                   .rxEditingDisplayName.value),
-              //                           child: Text(controller
-              //                                   .rxEditingDisplayName
-              //                                   .value
-              //                                   .isNotEmpty
-              //                               ? controller
-              //                                   .rxEditingDisplayName.value
-              //                                   .substring(0, 1)
-              //                                   .toUpperCase()
-              //                               : ''),
-              //                         ),
-              //                         Text('editing_user'.trArgs([
-              //                           controller.rxEditingDisplayName.value
-              //                         ])),
-              //                       ],
-              //                     ),
-              //             ),
-              //             const SizedBox(width: 15),
-              //             // Tooltip(
-              //             //   message: 'get_permission'.tr,
-              //             //   child: IconButton(
-              //             //     onPressed: () {
-              //             //       if (controller.rxIsRequestPermission.value) {
-              //             //         controller.setEditorUserPermission(true);
-              //             //         EasyLoading.showInfo(
-              //             //             'get_permission_success'.tr);
-              //             //         return;
-              //             //       }
-              //             //       EasyLoading.showError(
-              //             //           'get_permission_error'.tr);
-              //             //       return;
-              //             //     },
-              //             //     icon: Icon(
-              //             //       controller.rxIsRequestPermission.value
-              //             //           ? Icons.pan_tool // 요청 가능
-              //             //           : Icons.pan_tool_outlined, // 요청 불가능
-              //             //     ),
-              //             //   ),
-              //             // ),
-              //             controller.rxIsEditorStatus.value
-              //                 ? Tooltip(
-              //                     // message: 'get_permission'.tr,
-              //                     message:
-              //                         controller.rxIsRequestPermission.value
-              //                             ? 'get_permission'.tr
-              //                             : 'exit'.tr,
-              //                     child: IconButton(
-              //                       onPressed: () {
-              //                         if (controller
-              //                             .rxIsRequestPermission.value) {
-              //                           controller
-              //                               .setEditorUserPermission(true);
-              //                           EasyLoading.showInfo(
-              //                               'get_permission_success'.tr);
-              //                           return;
-              //                         } else {
-              //                           controller
-              //                               .setEditorUserPermission(false);
-              //                           controller.rxIsDrawingMode.value =
-              //                               false;
-              //                           controller.editor
-              //                               ?.toggleDrawingMode('null');
-              //                           controller.editor?.enable(true);
-              //                         }
-              //                       },
-              //                       icon: Icon(
-              //                         controller.rxIsRequestPermission.value
-              //                             ? Icons.pan_tool // 요청 가능
-              //                             : Icons.cancel, // 요청 불가능
-              //                       ),
-              //                     ),
-              //                   )
-              //                 : const SizedBox.shrink(),
-              //             // !controller.rxIsRequestPermission.value
-              //             //     ? IconButton(
-              //             //         icon: const Icon(Icons.cancel,
-              //             //             color: Colors.red),
-              //             //         onPressed: () {
-              //             //           if (controller
-              //             //               .rxIsRequestPermission.value) {
-              //             //             // controller.setEditorUserPermission(false);
-              //             //           } else {
-              //             //             controller.setEditorUserPermission(false);
-              //             //             controller.rxIsDrawingMode.value = false;
-              //             //             controller.editor
-              //             //                 ?.toggleDrawingMode('null');
-              //             //             controller.editor?.enable(true);
-              //             //           }
-              //             //         },
-              //             //       )
-              //             //     : const SizedBox.shrink(),
-              //             const SizedBox(width: 10),
-              //             Obx(() => controller.rxStartCoOpCount.value &&
-              //                     controller.rxCoOpCount.value != 0
-              //                 ? _coopCountDown(controller.rxCoOpCount.value)
-              //                 : const SizedBox.shrink()),
-              //             //const Icon(Icons.more_vert),
-              //           ],
-              //           initialPosition: Offset(
-              //             70,
-              //             controller.documentState.rxDocumentSizeHeight.value
-              //                     .toDouble() -
-              //                 150,
-              //           ),
-              //         )
-              //       : const SizedBox.shrink(),
-              // ),
-            ],
-          );
-        }),
+                          Obx(() => AnimatedContainerDrawer(
+                                drawerWidth: 300,
+                                alignment: Alignment.topLeft,
+                                isOpen:
+                                    controller.uiState.isRightDrawerOpen.value,
+                                onClose: controller.toggleRightDrawer,
+                                child: SizedBox(
+                                  child: controller.rxAttribute.value,
+                                ),
+                              )),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
+                Obx(
+                  () => controller.rxIsCoopMode.value
+                      ? DraggablePopupMenuBar(
+                          menuItems: [
+                            Tooltip(
+                              message: controller.isEditingStatus.value
+                                  ? 'editing_user_status_true'.tr
+                                  : 'editing_user'.trArgs(
+                                      [controller.rxEditingDisplayName.value]),
+                              child: controller.isEditingStatus.value
+                                  ? Icon(
+                                      Icons.circle,
+                                      color: controller.isEditingStatus.value
+                                          ? Colors.green
+                                          : Colors.red,
+                                    )
+                                  : Row(
+                                      spacing: 10,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 16,
+                                          backgroundColor: getColorForUserId(
+                                              controller
+                                                  .rxEditingDisplayName.value),
+                                          child: Text(controller
+                                                  .rxEditingDisplayName
+                                                  .value
+                                                  .isNotEmpty
+                                              ? controller
+                                                  .rxEditingDisplayName.value
+                                                  .substring(0, 1)
+                                                  .toUpperCase()
+                                              : ''),
+                                        ),
+                                        Text('editing_user'.trArgs([
+                                          controller.rxEditingDisplayName.value
+                                        ])),
+                                      ],
+                                    ),
+                            ),
+                            const SizedBox(width: 15),
+                            controller.rxIsEditorStatus.value
+                                ? Tooltip(
+                                    // message: 'get_permission'.tr,
+                                    message:
+                                        controller.rxIsRequestPermission.value
+                                            ? 'get_permission'.tr
+                                            : 'exit'.tr,
+                                    child: IconButton(
+                                      onPressed: () {
+                                        if (controller
+                                            .rxIsRequestPermission.value) {
+                                          controller
+                                              .setEditorUserPermission(true);
+                                          EasyLoading.showInfo(
+                                              'get_permission_success'.tr);
+                                          return;
+                                        } else {
+                                          controller
+                                              .setEditorUserPermission(false);
+                                          controller.rxIsDrawingMode.value =
+                                              false;
+                                          controller.editor
+                                              ?.toggleDrawingMode('null');
+                                          controller.editor?.enable(true);
+                                        }
+                                      },
+                                      icon: Icon(
+                                        controller.rxIsRequestPermission.value
+                                            ? Icons.pan_tool // 요청 가능
+                                            : Icons.cancel, // 요청 불가능
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                            const SizedBox(width: 10),
+                            Obx(() => controller.rxStartCoOpCount.value &&
+                                    controller.rxCoOpCount.value != 0
+                                ? _coopCountDown(controller.rxCoOpCount.value)
+                                : const SizedBox.shrink()),
+                            //const Icon(Icons.more_vert),
+                          ],
+                          initialPosition: Offset(
+                            70,
+                            MediaQuery.of(context).size.height.toDouble() - 100,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            );
+          }),
+        ),
       ),
     );
   }
@@ -1240,8 +1151,8 @@ class _VulcanEditorState extends State<VulcanEditor> {
 
   void _checkProjectIdAndShowDialog(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // debugPrint(
-      //     '####_checkProjectIdAndShowDialog: ${controller.rxDisplayType.value}');
+      debugPrint(
+          '####_checkProjectIdAndShowDialog: ${controller.rxDisplayType.value}');
       if (controller.rxDisplayType.value == VulcanEditorDisplayType.create) {
         // 템플릿 아이디가 존재할 . 떄분기 처리
         if (widget.templateId != null) {
@@ -1250,16 +1161,20 @@ class _VulcanEditorState extends State<VulcanEditor> {
         } else {
           _showNewDocumentDialog(context);
         }
-      } else if (controller.rxDisplayType.value ==
-          VulcanEditorDisplayType.unauthorized) {
-        debugPrint(
-            '####_checkProjectIdAndShowDialog unauthorized: ${controller.rxDisplayType.value}');
-        _showUnauthorizedDialog(context);
       }
+      // 실제 권한 거부 처리는 onProjectAccessDenied 콜백 경로에서만 수행
+      // } else if (controller.rxDisplayType.value ==
+      //     VulcanEditorDisplayType.unauthorized) {
+      //   debugPrint(
+      //       '####_checkProjectIdAndShowDialog unauthorized: ${controller.rxDisplayType.value}');
+      //   _showUnauthorizedDialog(context);
+      // }
     });
   }
 
   Future<void> _showNewDocumentDialog(BuildContext context) async {
+    if (_isShowNewDocumentDialog) return;
+    _isShowNewDocumentDialog = true;
     VulcanCloseDialogType? result = await VulcanCloseDialogWidget(
       width: 540,
       height: 267,
@@ -1277,6 +1192,8 @@ class _VulcanEditorState extends State<VulcanEditor> {
       ),
     ).show(context);
 
+    _isShowNewDocumentDialog = false;
+
     if (result == VulcanCloseDialogType.ok) {
       debugPrint('사용자가 확인을 선택했습니다.');
     } else if (result == VulcanCloseDialogType.cancel) {
@@ -1284,12 +1201,18 @@ class _VulcanEditorState extends State<VulcanEditor> {
     } else if (result == VulcanCloseDialogType.close) {
       debugPrint('다이얼로그가 닫혔습니다.');
       if (context.mounted) {
-        context.go('/home');
+        // context.go('/home');
+        controller.stopCoOpCount();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) context.go('/home');
+        });
       }
     }
   }
 
   Future<void> _showTemplateDialog(BuildContext context) async {
+    if (_isShowTemplateDialog) return;
+    _isShowTemplateDialog = true;
     VulcanCloseDialogType? result = await VulcanCloseDialogWidget(
       width: 960,
       //템플릿 선택
@@ -1302,16 +1225,23 @@ class _VulcanEditorState extends State<VulcanEditor> {
         },
       ),
     ).show(context);
+    _isShowTemplateDialog = false;
 
     if (result == VulcanCloseDialogType.close) {
       debugPrint('다이얼로그가 닫혔습니다.');
       if (context.mounted) {
-        context.go('/home');
+        // context.go('/home');
+        controller.stopCoOpCount();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) context.go('/home');
+        });
       }
     }
   }
 
   Future<void> _showProjectSettingDialog(BuildContext context) async {
+    if (_isShowProjectSettingDialog) return;
+    _isShowProjectSettingDialog = true;
     VulcanCloseDialogType? result = await VulcanCloseDialogWidget(
       width: 320,
       height: 320,
@@ -1334,9 +1264,15 @@ class _VulcanEditorState extends State<VulcanEditor> {
       ),
     ).show(context);
 
+    _isShowProjectSettingDialog = false;
+
     if (result == VulcanCloseDialogType.close) {
       if (context.mounted) {
-        context.go('/home');
+        // context.go('/home');
+        controller.stopCoOpCount();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) context.go('/home');
+        });
       }
     }
   }
@@ -1345,7 +1281,11 @@ class _VulcanEditorState extends State<VulcanEditor> {
     EasyLoading.showInfo('권한이 없는 프로젝트입니다.').then((value) {
       Future.delayed(const Duration(milliseconds: 1600), () {
         if (context.mounted) {
-          context.go('/home');
+          // context.go('/home');
+          controller.stopCoOpCount();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) context.go('/home');
+          });
         }
       });
     });
