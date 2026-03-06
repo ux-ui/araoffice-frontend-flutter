@@ -139,6 +139,7 @@ class LoginController extends GetxController {
 
   final loginSessionToken = false.obs; // 로그인 세션 체크 토큰
   bool _isInitializing = false; // 초기화 중 플래그 (새로고침 시 로그아웃 방지)
+  bool _hasLoggedInitializingWait = false; // 초기화 대기 로그 중복 출력 방지
   final savedRedirectUrl = Rxn<String>(); // 302 응답 시 저장할 원래 URL
   bool _isSessionExpiredPopupShowing = false; // 세션 만료 팝업 표시 중 플래그
   bool loginSuccess = false; // 로그인 성공 여부 플래그 (401 응답 처리 시 사용)
@@ -394,14 +395,15 @@ class LoginController extends GetxController {
   }
 
   Future<bool> checkUserShareId(BuildContext context) async {
-    if (loginSessionToken.value) {
-      if (loginUserInfo.value?.userId?.isNotEmpty ?? false) {
-        return await checkUserShareIdStatus(context);
-      } else {
-        return false;
-      }
-    }
-    return false;
+    // if (loginSessionToken.value) {
+    //   if (loginUserInfo.value?.userId?.isNotEmpty ?? false) {
+    //     return await checkUserShareIdStatus(context);
+    //   } else {
+    //     return false;
+    //   }
+    // }
+    // return false;
+    return true;
   }
 
   Future<bool> checkUserShareIdStatus(BuildContext context) async {
@@ -416,9 +418,9 @@ class LoginController extends GetxController {
 
     if (userShareId.value == '' || userShareId.value.isEmpty) {
       FocusManager.instance.primaryFocus?.unfocus();
-      final result = await _presentShareIdPopup(context);
+      // final result = await _presentShareIdPopup(context);
       // 회원가입 완료 시 true, 취소 또는 다른 방식으로 닫힌 경우 false
-      return result;
+      // return result;
     }
     return true;
   }
@@ -2097,12 +2099,18 @@ class LoginController extends GetxController {
       Map<String, dynamic>? message) async {
     // 초기화 중에는 세션 복원을 기다림 (새로고침 시 로그아웃 방지)
     if (_isInitializing) {
-      logger.i('초기화 중이므로 로그인 상태 확인 대기');
+      if (!_hasLoggedInitializingWait) {
+        logger.i('초기화 중이므로 로그인 상태 확인 대기');
+        _hasLoggedInitializingWait = true;
+      }
       // 초기화 완료까지 대기 (최대 3초)
       int waitCount = 0;
       while (_isInitializing && waitCount < 30) {
         await Future.delayed(const Duration(milliseconds: 100));
         waitCount++;
+      }
+      if (!_isInitializing) {
+        _hasLoggedInitializingWait = false;
       }
       // 초기화 완료 후 사용자 정보 확인
       if (userId.value.isNotEmpty) {
@@ -2111,6 +2119,8 @@ class LoginController extends GetxController {
           userLoginType: userLoginType.value.name,
         );
       }
+    } else {
+      _hasLoggedInitializingWait = false;
     }
 
     // message가 null이거나 message['message']가 null인 경우 안전하게 처리

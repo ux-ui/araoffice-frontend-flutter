@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 
+import 'package:api/api.dart';
 import 'package:app_ui/app_ui.dart';
 import 'package:author_editor/editor_event_timer_manager.dart';
 import 'package:author_editor/panel/page_attribute_panel.dart';
@@ -184,11 +185,15 @@ class VulcanEditorController extends GetxController
   final accordionWidgetStatus = false.obs; // 아코디언 위젯
   final quizWidgetStatus = false.obs; // 퀴즈 위젯
   final shareStatus = false.obs; // 공유 유무
+
   // 프로젝트 자동저장 카운트
   final rxAutoSaveCount = 300.obs;
   final rxStartAutoSaveCount = false.obs;
   Timer? autoSaveTimer;
   bool isDocumentChanged = false;
+  bool _isExitCleanupStarted = false;
+  bool _isAccessDeniedHandling = false;
+  bool _isAcquirePermissionInFlight = false;
 
   VoidCallback? onUpdate;
   VoidCallback? onTempSaveCheckCallback;
@@ -208,6 +213,8 @@ class VulcanEditorController extends GetxController
     // 불필요한 리소스 해제
     disposeFocusNodes();
     super.onClose();
+    stopCoOpCount();
+    unawaited(releasePermissionThenNotifyTreeListOnExit());
   }
 
   void initTenantSetting(Map<String, dynamic> tenant) {
@@ -230,7 +237,7 @@ class VulcanEditorController extends GetxController
     rxDisplayType.value =
         vulcanEditorData.displayType ?? VulcanEditorDisplayType.unauthorized;
     debugPrint(
-        '####@@@editor controller display displayType: $rxDisplayType.value');
+        '####@@@vulcaneditor controller display displayType: ${rxDisplayType.value}');
     final projectId = vulcanEditorData.projectId ?? '';
 
     documentState.initializeUrls(baseUrl);
@@ -239,6 +246,7 @@ class VulcanEditorController extends GetxController
     await Future.delayed(Duration.zero, () async {
       if (rxDisplayType.value == VulcanEditorDisplayType.unauthorized) {
         documentState.rxProjectId.value = '';
+        documentState.rxDisplayName.value = 'anonymous';
         documentState.rxPageCurrent.value = null;
         update();
       } else if (rxDisplayType.value == VulcanEditorDisplayType.create) {
@@ -250,6 +258,8 @@ class VulcanEditorController extends GetxController
 
         // 문서 상태 업데이트
         documentState.rxProjectId.value = projectId;
+        documentState.rxDisplayName.value =
+            vulcanEditorData.userDisplayName ?? '';
         documentState.rxStartPageId.value = vulcanEditorData.startPageId ?? '';
         documentState.rxProjectName.value = vulcanEditorData.projectName ?? '';
         documentState.rxPages.value = vulcanEditorData.pages ?? [];
@@ -307,11 +317,21 @@ class VulcanEditorController extends GetxController
         if (vulcanEditorData.widgetData != null) {
           final widgetPath = vulcanEditorData.widgetData!.widgetPath;
           final markup = vulcanEditorData.widgetData!.markup;
-          final jsFiles = vulcanEditorData.widgetData!.jsFiles.first;
-          final cssFiles = vulcanEditorData.widgetData!.cssFiles.first;
 
-          final cssPath = './$cssFiles?type=widget&id=$widgetPath';
-          final jsPath = './$jsFiles?type=widget&id=$widgetPath';
+          // "._vew_slider.css", "vew_slider.css" 와 같이 파일 목록이 오는 경우가 있음
+          final cssFiles = vulcanEditorData.widgetData!.cssFiles;
+          // .으로 시작하는 경우 제거
+          cssFiles.removeWhere((file) => file.startsWith('.'));
+          final cssFile = cssFiles.firstOrNull ?? '';
+
+          // "._vew_slider.js", "vew_slider.js" 와 같이 파일 목록이 오는 경우가 있음
+          final jsFiles = vulcanEditorData.widgetData!.jsFiles;
+          // .으로 시작하는 경우 제거
+          jsFiles.removeWhere((file) => file.startsWith('.'));
+          final jsFile = jsFiles.firstOrNull ?? '';
+
+          final cssPath = './$cssFile?type=widget&id=$widgetPath';
+          final jsPath = './$jsFile?type=widget&id=$widgetPath';
 
           //widget 값 초기화
           if (vulcanEditorData.widgetData!.widgetType == 'page_number') {
@@ -343,10 +363,11 @@ class VulcanEditorController extends GetxController
       }
     });
 
-    if (rxEditingUserId.value == 'null') {
-      logger.d('######display: rxEditingUserId.value is null');
-      editor?.enable(true);
-    }
+    // if (rxEditingUserId.value == 'null') {
+    // if (rxEditingUserId.value.isEmpty || rxEditingUserId.value == 'null') {
+    //   logger.d('######display: rxEditingUserId.value is null');
+    //   editor?.enable(true);
+    // }
     showEditorUser(projectId);
   }
 
@@ -395,9 +416,17 @@ class VulcanEditorController extends GetxController
 
   // 프로젝트 공유 유저 리스트와 로그인 유저를 검증하는 단계
   Future<bool> isPermission() async {
+    final projectId = documentState.rxProjectId.value;
+    if (projectId.isEmpty) {
+      rxIsCoopMode.value = false;
+      isEditingPermission.value = false;
+      myCoOpState.value = false;
+      return false;
+    }
+
     try {
-      final result =
-          await apiService.getUserList(documentState.rxProjectId.value);
+
+      final result = await apiService.getUserList(projectId);
       final userList = result?.users
               ?.map((user) => VulcanUserData.fromJson(user.toJson()))
               .toList() ??
@@ -416,10 +445,7 @@ class VulcanEditorController extends GetxController
       final userIds = userList.map((user) => user.userId).toList();
       final hasUserId = userIds.contains(documentState.rxUserId.value);
       if (hasUserId) {
-        if (documentState.rxProjectSharePermission.value ==
-                ProjectAuthType.publicLink ||
-            documentState.rxProjectSharePermission.value ==
-                ProjectAuthType.userLink) {
+        if (documentState.hasSharedPermission) {
           rxIsCoopMode.value = true;
           isEditingPermission.value = true;
           myCoOpState.value = true;
@@ -432,6 +458,9 @@ class VulcanEditorController extends GetxController
       return hasUserId;
     } catch (e) {
       debugPrint('#### isPermission 오류 발생: $e');
+      rxIsCoopMode.value = false;
+      isEditingPermission.value = false;
+      myCoOpState.value = false;
       return false;
     }
   }
@@ -584,10 +613,7 @@ class VulcanEditorController extends GetxController
 
     final scrollX = scrollPosition?.x ?? 0;
     final scrollY = scrollPosition?.y ?? 0;
-    if (documentState.rxProjectSharePermission.value ==
-            ProjectAuthType.publicLink ||
-        documentState.rxProjectSharePermission.value ==
-            ProjectAuthType.userLink) {
+    if (documentState.hasSharedPermission) {
       if (isMouseDown) {
         // 화이트 보드 좌표
         onWhiteBoardMouseMove(scrollX, scrollY);
@@ -967,6 +993,14 @@ class VulcanEditorController extends GetxController
   //_____editor engine______
   void setEditorLoad(Editor editor) async {
     _editor = editor;
+    setEditorReady(false);
+    // 페이지 전환 시 UI 기본 상태만 초기화하고,
+    // 협업 편집자 상태(rxEditingUserId/displayName/isEditingStatus)는
+    // WebSocket editor 이벤트를 단일 진실 소스로 사용한다.
+    rxIsCoopMode.value = false;
+    isEditingPermission.value = false;
+    rxIsEditorStatus.value = false;
+    rxIsRequestPermission.value = false;
 
     loadEditor(isUnload: false);
 
@@ -981,42 +1015,77 @@ class VulcanEditorController extends GetxController
     } else {
       permission = false;
     }
-    if (documentState.rxProjectSharePermission.value ==
-            ProjectAuthType.publicLink ||
-        documentState.rxProjectSharePermission.value ==
-            ProjectAuthType.userLink) {
+    if (documentState.hasSharedPermission) {
       // WebSocket 연결 보장 (이미 연결된 경우 재연결하지 않음)
-      ensureSocketForPermission(isPermission: permission);
-      // rxIsCoopMode.value = true;
-      // checkEnabledEditor();
-      // getSharedUserList();
-      if (rxEditingUserId.value == 'null') {
-        editor.enable(true);
-      }
+      await ensureSocketForPermission(isPermission: permission);
     } else {
       rxIsCoopMode.value = false;
       rxIsEditorStatus.value = true;
       isEditingStatus.value = true;
       isEditingPermission.value = true;
       // 비공개에서는 소켓 연결 해제 보장
-      ensureSocketForPermission(isPermission: false);
+      await ensureSocketForPermission(isPermission: false);
     }
   }
 
-  void setEditorUserPermission(bool isEditorEdit) async {
-    final result = await apiService.setEditorUserPermission(
-        pageId: documentState.rxPageCurrent.value?.id ?? '',
-        isEditorEdit: isEditorEdit);
-    if (result == true) {
-      final data =
-          await apiService.fetchProject(documentState.rxProjectId.value);
-      final pages = data?.project?.toPageJson();
-      final treeListModel = TreeListModel.listFromJson(pages!);
-      documentUserId.value = data?.project?.displayName ?? '';
-      documentState.rxPages.value = treeListModel;
+  Future<bool> setEditorUserPermission(bool isEditorEdit) async {
+    if (isEditorEdit && _isAcquirePermissionInFlight) {
+      logger.d('setEditorUserPermission skipped: acquire already in-flight');
+      return false;
     }
-    wsManager.sendTreeList(documentState.rxProjectId.value);
-    debugPrint('#### setEditorUserPermission: $isEditorEdit');
+
+    if (isEditorEdit) {
+      _isAcquirePermissionInFlight = true;
+    }
+
+    try {
+      final result = await apiService.setEditorUserPermission(
+          pageId: documentState.rxPageCurrent.value?.id ?? '',
+          isEditorEdit: isEditorEdit);
+      if (result == true) {
+        final data =
+            await apiService.fetchProject(documentState.rxProjectId.value);
+        final pages = data?.project?.toPageJson();
+        final treeListModel = TreeListModel.listFromJson(pages!);
+        documentUserId.value = data?.project?.displayName ?? '';
+        documentState.rxPages.value = treeListModel;
+        wsManager.sendTreeList(documentState.rxProjectId.value);
+        debugPrint('#### setEditorUserPermission: $isEditorEdit');
+        return true;
+      }
+      logger.w('setEditorUserPermission 실패: isEditorEdit=$isEditorEdit');
+      return false;
+    } finally {
+      if (isEditorEdit) {
+        _isAcquirePermissionInFlight = false;
+      }
+    }
+  }
+
+  bool _shouldReleaseEditorPermissionOnExit() {
+    return rxEditingUserId.value == documentState.rxUserId.value &&
+        rxIsEditorStatus.value &&
+        documentState.rxUserId.value.isNotEmpty;
+  }
+
+  Future<void> releasePermissionThenNotifyTreeListOnExit() async {
+    if (_isExitCleanupStarted) return;
+    _isExitCleanupStarted = true;
+
+    if (_shouldReleaseEditorPermissionOnExit()) {
+      final released = await setEditorUserPermission(false);
+      if (!released) {
+        logger.w('종료 중 편집 권한 해제 실패로 트리 갱신 메시지 전송을 건너뜁니다.');
+      }
+    } else {
+      notifyTreeListOnExit();
+    }
+
+    await Future.delayed(const Duration(milliseconds: 200));
+    disposeWebSocket();
+
+    // wsManager.sendTreeList(documentState.rxProjectId.value);
+    // debugPrint('#### setEditorUserPermission: $isEditorEdit');
   }
 
   void loadEditor({bool? isUnload = true}) async {
@@ -1056,6 +1125,7 @@ class VulcanEditorController extends GetxController
   // 페이지 로드 후 호출되는 메서드
   void onPageLoad(Editor editor) {
     logger.d('onPageLoad: ${documentState.rxPageCurrent.value?.idref}');
+    setEditorReady(true);
     final document = editor.getDocumentState();
     documentState.rxDocumentSizeWidth.value = document.width;
     documentState.rxDocumentSizeHeight.value = document.height;
@@ -1099,7 +1169,9 @@ class VulcanEditorController extends GetxController
     if (!isLoggedIn) {
       rxIsCoopMode.value = false;
       rxIsEditorStatus.value = false;
-      editor?.enable(false);
+      setEditorEnabledSafely(false, reason: 'checkEnabledEditor:not-logged-in');
+      logger.i(
+          '######!!display: loginStatus?.displayName: ${loginStatus?.displayName}');
       return;
     }
 
@@ -1107,8 +1179,10 @@ class VulcanEditorController extends GetxController
     // 페이지 소유자, 페이지 편집자 여부 체크
     final pageId = documentState.rxPageCurrent.value?.id ?? '';
     if (pageId.isEmpty) {
+      logger.i('######!!display: pageId is empty');
       return;
     }
+
     final userInfo = await apiService.checkEditStatus(pageId: pageId);
     rxIsOwner.value = userInfo?.user?.isOwner ?? false;
     myCoOpState.value = userInfo?.user?.isEditable ?? false;
@@ -1116,11 +1190,48 @@ class VulcanEditorController extends GetxController
     // editor?.enable(userInfo?.user?.isEditable ?? false);
     documentState.rxPageEditable.value = userInfo?.user?.isEditable ?? false;
 
-    logger
-        .i('######display: checkEnabledEditor: ${userInfo?.user?.isEditable}');
-    if (rxEditingUserId.value == 'null') {
-      logger.i('######display: rxEditingUserId.value is null');
-      editor?.enable(true);
+    logger.i(
+        '######!!display: checkEnabledEditor: isEditable=${userInfo?.user?.isEditable}, rxEditingUserId=${rxEditingUserId.value}, documentState.rxUserId=${documentState.rxUserId.value}');
+
+    // PUBLICLINK 등에서 공유받지 않은 사용자는 편집 불가
+    final isEditable = userInfo?.user?.isEditable ?? false;
+
+    if (documentState.hasSharedPermission) {
+      final isOtherUserEditing = rxEditingUserId.value.isNotEmpty &&
+          rxEditingUserId.value != 'null' &&
+          rxEditingUserId.value != documentState.rxUserId.value;
+
+      // 이미 다른 사용자가 편집 중으로 확정된 상태라면
+      // 권한 재검사 결과로 편집 가능 상태를 덮어쓰지 않는다.
+      if (isOtherUserEditing) {
+        setEditorEnabledSafely(false,
+            reason: 'checkEnabledEditor:preserve-other-editor');
+        rxIsEditorStatus.value = false;
+        return;
+      }
+
+      // 편집 권한이 있는 경우에만 다른 사용자가 편집 중인지 확인
+      // if (rxEditingUserId.value == 'null') {
+      if (rxEditingUserId.value.isEmpty || rxEditingUserId.value == 'null') {
+        // 초기 진입 시 편집자 정보가 아직 동기화되지 않았더라도,
+        // 서버의 편집 가능 여부(isEditable)를 우선 반영한다.
+        setEditorEnabledSafely(
+          isEditable,
+          reason: 'checkEnabledEditor:shared-open',
+        );
+        // 편집중 유저가 없으면 권한 요청 가능(손바닥) 상태여야 한다.
+        rxIsRequestPermission.value = isEditable;
+        rxIsEditorStatus.value = isEditable;
+      } else if (rxEditingUserId.value == documentState.rxUserId.value) {
+        setEditorEnabledSafely(true, reason: 'checkEnabledEditor:shared-self');
+        rxIsRequestPermission.value = false;
+        rxIsEditorStatus.value = true;
+      } else {
+        setEditorEnabledSafely(false,
+            reason: 'checkEnabledEditor:shared-other');
+        rxIsRequestPermission.value = false;
+        rxIsEditorStatus.value = false;
+      }
     }
   }
 
@@ -1129,18 +1240,6 @@ class VulcanEditorController extends GetxController
   }
 
   Future<void> changePageTreeList(TreeListModel pageData) async {
-    final projectId = documentState.rxProjectId.value;
-    if (projectId.isEmpty) {
-      if (documentState.rxPageCurrent.value.hashCode != pageData.hashCode) {
-        await changedPage(pageData);
-      }
-      return;
-    }
-    final result = await apiService.fetchProject(projectId);
-    if (result != null && result.statusCode == 403) {
-      onProjectAccessDenied?.call();
-      return;
-    }
     if (documentState.rxPageCurrent.value.hashCode != pageData.hashCode) {
       await changedPage(pageData);
     }
@@ -1148,6 +1247,59 @@ class VulcanEditorController extends GetxController
 
   Future<void> changedPage(TreeListModel pageData) async {
     logger.d('[VulcanEditorController] changedPage');
+    if (_isExitCleanupStarted) return;
+
+    final projectId = documentState.rxProjectId.value;
+    if (projectId.isEmpty) {
+      return;
+    }
+    final result = await apiService.fetchProject(projectId);
+    if (result != null && result.statusCode == 403) {
+      // 협업 동기화 직후 일시적인 권한 경합을 줄이기 위해 1회 재검증
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (_isExitCleanupStarted) return;
+
+      final recheck = await apiService.fetchProject(projectId);
+      if (recheck == null || recheck.statusCode != 403) return;
+
+      if (_isAccessDeniedHandling) return;
+      _isAccessDeniedHandling = true;
+      onProjectAccessDenied?.call();
+      return;
+    }
+
+    final projectAuth = result?.project?.projectAuth;
+    final shareType = ProjectAuthType.fromString(projectAuth);
+    documentState.rxProjectSharePermission.value = shareType;
+
+    Future<void> denyAndExit() async {
+      if (_isAccessDeniedHandling) return;
+      _isAccessDeniedHandling = true;
+      onProjectAccessDenied?.call();
+    }
+
+    final loginStatus = await loginService.userInfo();
+    final isLoggedIn = loginStatus?.displayName != null;
+
+    // 권한 타입 변경(public -> userLink/onlyMe) 시 기존 접속자 즉시 차단
+    if (shareType == ProjectAuthType.userLink) {
+      if (!isLoggedIn) {
+        await denyAndExit();
+        return;
+      }
+      final hasPermission = await isPermission();
+      if (!hasPermission) {
+        await denyAndExit();
+        return;
+      }
+    } else if (shareType == ProjectAuthType.onlyMe) {
+      final permission =
+          await apiService.checkUserPermission(projectId: projectId);
+      if (permission?.user == null) {
+        await denyAndExit();
+        return;
+      }
+    }
 
     // 페이지 변경 작업이 이루어지기 전에 타이머를 종료 시키고 저장 동작을 한 후에 변경 동작 시작
     if (documentState.rxPageCurrent.value?.idref != null) {
@@ -1172,7 +1324,7 @@ class VulcanEditorController extends GetxController
       if (rxEditingUserId.value == documentState.rxUserId.value) {
         // 로그인 되어 있는 편집 권한 가진 유저들만 체크하도록
         if (rxIsEditorStatus.value) {
-          setEditorUserPermission(false);
+          await setEditorUserPermission(false);
         }
       }
     }
@@ -1182,42 +1334,56 @@ class VulcanEditorController extends GetxController
     // 페이지 클릭 시 호출 함수
     final fileName = pageData.href;
     // final pageUrl = rxPageUrl.value.replaceAll(RegExp(r'[^/]+\.xhtml$'), fileName);
-    final pageUrl = documentState.getBuildTypeUrl(
-        documentState.rxProjectId.value, fileName);
+    final pageUrl = documentState.getBuildTypeUrl(projectId, fileName);
 
     documentState.rxPageCurrent.value = pageData;
     rxPageUrl.value = pageUrl;
 
-    final loginStatus = await loginService.userInfo();
-    final isLoggedIn = loginStatus?.displayName != null;
     bool permission = false;
 
-    if (isLoggedIn) {
+    if (isLoggedIn && documentState.hasSharedPermission) {
       permission = await isPermission();
     } else {
       permission = false;
     }
 
-    editor?.unload();
-    editor?.load(rxPageUrl.value);
+    try {
+      editor?.unload();
+    } catch (e) {
+      logger.w('changedPage unload skipped: $e');
+    }
+    try {
+      editor?.load(rxPageUrl.value);
+    } catch (e) {
+      logger.w('changedPage load skipped: $e');
+    }
     // editor?.unloadWhiteBoard();
     // editor?.loadWhiteBoard();
     // web-socket 페이지 변경 로직 추가
-    if (documentState.rxProjectSharePermission.value ==
-            ProjectAuthType.publicLink ||
-        documentState.rxProjectSharePermission.value ==
-            ProjectAuthType.userLink) {
+    if (documentState.hasSharedPermission) {
       onChangedPage(documentState.rxPageCurrent.value?.idref ?? '',
           isPermission: permission);
-      wsManager.sendCursorPosition(
-          documentState.rxProjectId.value,
-          documentState.rxPageCurrent.value?.idref ?? 'cover.xhtml',
-          0,
-          0,
-          documentState.rxDocumentSizeWidth.value.toDouble(),
-          documentState.rxDocumentSizeHeight.value.toDouble(),
-          'clear',
-          'false');
+      // 익명 사용자일 경우 anonymousUserId를 displayName으로 사용
+      final isAnonymous = documentState.rxUserId.value.isEmpty;
+      final effectiveDisplayName = isAnonymous
+          ? anonymousUserId
+          : (documentState.rxDisplayName.value.isEmpty
+              ? documentState.rxUserId.value
+              : documentState.rxDisplayName.value);
+      if (isSocketConnectedByEvent) {
+        wsManager.sendCursorPosition(
+            projectId,
+            effectiveDisplayName,
+            documentState.rxPageCurrent.value?.idref ?? 'cover.xhtml',
+            0,
+            0,
+            documentState.rxDocumentSizeWidth.value.toDouble(),
+            documentState.rxDocumentSizeHeight.value.toDouble(),
+            'clear',
+            'false');
+      } else {
+        debugPrint('#### 페이지 변경 직후 커서 clear 전송 생략(WebSocket 미연결)');
+      }
       // getSharedUserList();
     }
 
@@ -1253,9 +1419,16 @@ class VulcanEditorController extends GetxController
     }
   }
 
-  void refreshTree(List<TreeListModel> treeListModel) {
+  void refreshTree(List<TreeListModel>? treeListModel) {
     // wsManager.sendTreeList(documentState.rxProjectId.value, treeListModel);
-    wsManager.sendTreeList(documentState.rxProjectId.value);
+    // wsManager.sendTreeList(documentState.rxProjectId.value);
+    notifyTreeListOnExit();
+  }
+
+  void notifyTreeListOnExit() {
+    final projectId = documentState.rxProjectId.value;
+    if (projectId.isEmpty || !isSocketConnectedByEvent) return;
+    wsManager.sendTreeList(projectId);
   }
 
   void showEditorUser(String projectId) async {
@@ -1270,19 +1443,22 @@ class VulcanEditorController extends GetxController
       projectOwner = documentState.rxProjectOwner.value;
     }
     if (projectOwner == documentState.rxUserId.value) {
-      if (documentState.rxProjectSharePermission.value ==
-              ProjectAuthType.publicLink ||
-          documentState.rxProjectSharePermission.value ==
-              ProjectAuthType.userLink) {
+      if (documentState.hasSharedPermission) {
         rxShowEditorUser.value = true;
-        wsManager.sendTreeList(documentState.rxProjectId.value);
+        if (isSocketConnectedByEvent) {
+          wsManager.sendTreeList(documentState.rxProjectId.value);
+        }
       } else {
         rxShowEditorUser.value = false;
-        wsManager.sendTreeList(documentState.rxProjectId.value);
+        if (isSocketConnectedByEvent) {
+          wsManager.sendTreeList(documentState.rxProjectId.value);
+        }
       }
     } else {
       rxShowEditorUser.value = true;
-      wsManager.sendTreeList(documentState.rxProjectId.value);
+      if (isSocketConnectedByEvent) {
+        wsManager.sendTreeList(documentState.rxProjectId.value);
+      }
     }
   }
 
@@ -1383,7 +1559,7 @@ class VulcanEditorController extends GetxController
   //_______popup menu__________
   Future<void> gotoHome(BuildContext context) async {
     logger.d('[VulcanEditorController] gotoHome');
-    stopCoOpCount();
+    // stopCoOpCount();
 
     EasyLoading.show();
     if (timerManager.isTimerRunning) {
@@ -1398,9 +1574,9 @@ class VulcanEditorController extends GetxController
     }
     EasyLoading.dismiss();
 
-    if (rxEditingUserId.value == documentState.rxUserId.value) {
-      setEditorUserPermission(false);
-    }
+    // if (rxEditingUserId.value == documentState.rxUserId.value) {
+    //   setEditorUserPermission(false);
+    // }
 
     // if (documentState.rxPageCurrent.value?.idref != null) {
     //   if (timerManager.isTimerRunning) {
@@ -1438,14 +1614,16 @@ class VulcanEditorController extends GetxController
     //   logger.e('Error unloading editor in gotoHome: $e');
     // }
 
-    disposeWebSocket();
+    // disposeWebSocket();
+    stopCoOpCount();
+    await releasePermissionThenNotifyTreeListOnExit();
     rxIsCoopMode.value = false;
     uiState.isLeftDrawerOpen.value = false;
     uiState.isRightDrawerOpen.value = false;
     // Get.delete<VulcanEditorController>();
 
     // 에디터 정리 완료 후 페이지 이동
-    Future.microtask(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) {
         context.go('/home');
       }
@@ -1476,8 +1654,16 @@ class VulcanEditorController extends GetxController
 
   void showGrid(bool value) {
     rxShowGrid.value = value;
+    // 익명 사용자일 경우 anonymousUserId를 displayName으로 사용
+    final isAnonymous = documentState.rxUserId.value.isEmpty;
+    final effectiveDisplayName = isAnonymous
+        ? anonymousUserId
+        : (documentState.rxDisplayName.value.isEmpty
+            ? documentState.rxUserId.value
+            : documentState.rxDisplayName.value);
     wsManager.sendCursorPosition(
         documentState.rxProjectId.value,
+        effectiveDisplayName,
         documentState.rxPageCurrent.value?.idref ?? 'cover.xhtml',
         4.0,
         10.0,
@@ -1988,16 +2174,18 @@ class VulcanEditorController extends GetxController
       if (rxAutoSaveCount.value <= 0) {
         // 0초가 되면 저장 후 다시 초기 카운트로 계속 반복
         EasyLoading.showInfo('project_auto_save_message'.tr);
+
         // usertype이 naverworks인 경우에만 저장
         // if (rxUserLoginType.value == UserLoginType.naverWorks ||
         //     rxUserLoginType.value == UserLoginType.naver_works) {
         if (rxTenantType.value == TenantType.naverWorks ||
-            rxTenantType.value == TenantType.mois ||
-            rxTenantType.value == TenantType.msit ||
-            rxTenantType.value == TenantType.mfds ||
-            rxTenantType.value == TenantType.dferi ||
-            rxTenantType.value == TenantType.gov ||
-            rxTenantType.value == TenantType.standard) {
+                rxTenantType.value == TenantType.mois ||
+                rxTenantType.value == TenantType.msit ||
+                rxTenantType.value == TenantType.mfds ||
+                // rxTenantType.value == TenantType.dferi ||
+                rxTenantType.value == TenantType.gov
+            // rxTenantType.value == TenantType.standard
+            ) {
           saveAraProject();
           // } else if (rxUserLoginType.value == UserLoginType.ara) {
         } else if (rxTenantType.value == TenantType.ara) {
@@ -2091,6 +2279,14 @@ class VulcanEditorController extends GetxController
 
   void resetCoOpCount() {
     rxCoOpCount.value = rxSettingEditCount.value;
+  }
+
+  /// 편집 권한 해제 시 카운트 즉시 중단 (WebSocketControlMixin 오버라이드)
+  @override
+  void onEditorPermissionLost() {
+    debugPrint('#### onEditorPermissionLost: 편집 권한 해제, 카운트 즉시 중단');
+    stopCoOpCount();
+    stopAutoSaveCount();
   }
 
   bool get isPopupInteracting => rxPopupInteracting.value;
@@ -2210,12 +2406,20 @@ abstract class EditorService {
 class EditorServiceImpl implements EditorService {
   @override
   void refreshPage(dynamic page) {
+    if (!Get.isRegistered<VulcanEditorController>()) {
+      logger.w('VulcanEditorController not found in refreshPage - skipped');
+      return;
+    }
     final controller = Get.find<VulcanEditorController>();
     controller.refreshPage(page);
   }
 
   @override
   void changedPage(dynamic page) {
+    if (!Get.isRegistered<VulcanEditorController>()) {
+      logger.w('VulcanEditorController not found in changedPage - skipped');
+      return;
+    }
     final controller = Get.find<VulcanEditorController>();
     controller.changedPage(page);
   }

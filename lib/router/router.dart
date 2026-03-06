@@ -394,6 +394,13 @@ class AppRouter {
           context.go(HomePage.route);
         },
       ),
+      redirect: (context, state) {
+        // SplashController가 등록되어 있지 않으면 홈페이지로 리다이렉트
+        if (!Get.isRegistered<SplashController>()) {
+          return HomePage.route;
+        }
+        return null;
+      },
     ),
     GoRoute(
       path: WindowDemoPage.route,

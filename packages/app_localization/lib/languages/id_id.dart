@@ -411,6 +411,7 @@ const Map<String, String> idId = {
   'coop_mode_countdown': 'Waktu Edit',
   'coop_mode_countdown_message': 'Waktu edit bersama telah berakhir.',
   'coop_mode_countdown_seconds': 'Waktu tersisa %s : %s',
+  'connected_user_list_online': 'Pengguna Online %s',
 
   // Widget
   'slider': 'Slider',

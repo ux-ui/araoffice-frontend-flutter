@@ -70,7 +70,9 @@ class EditorController extends GetxController with CloudConnectionMixin {
     final templates = await templateController.fetchTemplateList();
     final vulcanTemplateData = _toVulcanTemplateDataList(templates ?? []);
 
-    final loginUser = await loginController.getUser();
+    // final loginUser = await loginController.getUser();
+    // 에디터 진입 시 캐시 무시(forceRefresh): 다른 유저로 전환 후 접근 시 이전 유저 정보로 깜빡임·403 방지
+    final loginUser = await loginController.getUser(forceRefresh: true);
     final userId = loginUser?.userId ?? '';
     final userDisplayName = loginUser?.displayName ?? '';
 
@@ -134,6 +136,13 @@ class EditorController extends GetxController with CloudConnectionMixin {
     }
   }
 
+  @override
+  void onClose() {
+    // 협업/자동저장 카운트 종료 (다른 화면 이동 시 진행 중인 카운트 정리)
+    // stopCoOpCount();
+    super.onClose();
+  }
+
   /// 프로젝트 접근 거부 시 기존과 동일한 EasyLoading 팝업 후 홈으로 이동
   void _showProjectAccessDeniedAndGoHome(BuildContext context) {
     EasyLoading.showInfo('권한이 없는 프로젝트입니다.').then((_) {
@@ -195,10 +204,11 @@ class EditorController extends GetxController with CloudConnectionMixin {
 
     if (project?.projectAuth == ProjectAuthType.onlyMe.value &&
         editStatus == false) {
+                rxDisplayType.value = VulcanEditorDisplayType.unauthorized;
+
       debugPrint('####@@@unauthorized: onlyme ${rxDisplayType.value}');
       rxVulcanEditorData.value = VulcanEditorData(
-          displayType: rxDisplayType.value =
-              VulcanEditorDisplayType.unauthorized,
+          displayType: rxDisplayType.value,
           userId: userId,
           projectOwner: result?.project?.userId,
           userDisplayName: userDisplayName,
@@ -213,8 +223,7 @@ class EditorController extends GetxController with CloudConnectionMixin {
       debugPrint(
           '####@@@unauthorized: userlink, login user : ${loginUser?.userId} ${rxDisplayType.value}');
       rxVulcanEditorData.value = VulcanEditorData(
-          displayType: rxDisplayType.value =
-              VulcanEditorDisplayType.unauthorized,
+          displayType: rxDisplayType.value,
           userId: userId,
           projectOwner: result?.project?.userId,
           userDisplayName: userDisplayName,
@@ -226,10 +235,12 @@ class EditorController extends GetxController with CloudConnectionMixin {
     if (project?.projectAuth == ProjectAuthType.publicLink.value &&
         loginUser == null &&
         editStatus == false) {
+                rxDisplayType.value = VulcanEditorDisplayType.editor;
+
       debugPrint(
           '####@@@editor: publiclink, login user : ${loginUser?.userId} ${rxDisplayType.value}');
       rxVulcanEditorData.value = VulcanEditorData(
-          displayType: rxDisplayType.value = VulcanEditorDisplayType.editor,
+          displayType: rxDisplayType.value,
           loginName: userDisplayName,
           userDisplayName: userDisplayName,
           projectName: project?.name,
@@ -246,10 +257,12 @@ class EditorController extends GetxController with CloudConnectionMixin {
               ?.map((user) => VulcanUserData.fromJson(user.toJson()))
               .toList());
     } else {
+      rxDisplayType.value = VulcanEditorDisplayType.editor;
+
       debugPrint(
           '####@@@editor: editor, login user : ${loginUser?.userId} ${rxDisplayType.value}');
       rxVulcanEditorData.value = VulcanEditorData(
-          displayType: rxDisplayType.value = VulcanEditorDisplayType.editor,
+          displayType: rxDisplayType.value,
           loginName: userDisplayName,
           userDisplayName: userDisplayName,
           projectName: project?.name,
@@ -356,10 +369,12 @@ class EditorController extends GetxController with CloudConnectionMixin {
     final pagesJson = project?.toPageJson();
     final treeListModel = TreeListModel.listFromJson(pagesJson!);
 
+    rxDisplayType.value = VulcanEditorDisplayType.editor;
+
     debugPrint(
         '####@@@editor: createProject, displayType : ${rxDisplayType.value}');
     rxVulcanEditorData.value = VulcanEditorData(
-      displayType: rxDisplayType.value = VulcanEditorDisplayType.editor,
+      displayType: rxDisplayType.value,
       projectName: project?.name,
       userId: loginController.userId.value,
       projectId: project?.id,

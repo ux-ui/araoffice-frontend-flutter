@@ -33,6 +33,9 @@ mixin WebSocketControlMixin on GetxController {
   // 에디터 상태 관리
   bool _isEditorReady = false;
   bool get isEditorReady => _isEditorReady && editor != null;
+  bool _isSocketConnectedByEvent = false;
+  bool get isSocketConnectedByEvent => _isSocketConnectedByEvent;
+  final rxSocketConnectedByEvent = false.obs;
   Timer? _editorOperationTimer;
   bool _isDisposed = false;
   bool get isDisposed => _isDisposed;
@@ -58,7 +61,7 @@ mixin WebSocketControlMixin on GetxController {
 
   // 커서 및 사용자 상호작용 관리
   final cursorAction = 'none'.obs;
-  final cursors = <String, Map<String, double>>{}.obs;
+  final cursors = <String, Map<String, dynamic>>{}.obs;
   // final connectedUserList = <String>{}.obs;
   final connectedUserList = <UserListInfo>{}.obs;
   final cursorTrails = <String, RxList<Offset>>{}.obs;
@@ -75,15 +78,60 @@ mixin WebSocketControlMixin on GetxController {
   // 목차 업데이트 중 일시정지 상태 관리
   final rxIsPause = false.obs;
 
-  /// 에디터 초기화 상태 설정
+  /// 편집 권한 해제 시 호출되는 콜백 (서브클래스에서 오버라이드)
+  void onEditorPermissionLost() {
+    // 기본 구현은 빈 메서드 - VulcanEditorController에서 오버라이드
+  }
+
+   /// 에디터 초기화 상태 설정
   void setEditorReady(bool ready) {
     _isEditorReady = ready;
     debugPrint('#### Editor ready state changed to: $_isEditorReady');
   }
 
-  void initializeWebSocket({
-    required bool isPermission,
+  /// 에디터 내부 DOM 준비 이전 enable 호출로 인한 JS 오류를 방지한다.
+  void setEditorEnabledSafely(
+    bool enabled, {
+    String reason = 'unknown',
+    int retry = 0,
   }) {
+    if (_isDisposed) return;
+
+    final targetEditor = editor;
+    if (targetEditor == null) {
+      debugPrint('#### setEditorEnabledSafely skipped(editor=null): $reason');
+      return;
+    }
+
+    if (!isEditorReady) {
+      if (retry < 6) {
+        Future.delayed(const Duration(milliseconds: 120), () {
+          setEditorEnabledSafely(enabled, reason: reason, retry: retry + 1);
+        });
+      } else {
+        debugPrint('#### setEditorEnabledSafely timeout(not ready): $reason');
+      }
+      return;
+    }
+
+    try {
+      // getDocumentState() 접근이 가능해야 내부 DOM이 준비된 상태로 본다.
+      targetEditor.getDocumentState();
+      targetEditor.enable(enabled);
+    } catch (e) {
+      if (retry < 6) {
+        Future.delayed(const Duration(milliseconds: 120), () {
+          setEditorEnabledSafely(enabled, reason: reason, retry: retry + 1);
+        });
+      } else {
+        debugPrint('#### setEditorEnabledSafely failed: $reason, error=$e');
+      }
+    }
+  }
+
+  Future<void> initializeWebSocket({
+    required bool isPermission,
+  }) async {
     try {
       // 이미 초기화 중이면 중복 초기화 방지
       if (_isInitializing) {
@@ -94,19 +142,13 @@ mixin WebSocketControlMixin on GetxController {
       // disposed 상태 리셋
       _isDisposed = false;
 
-      // 에디터가 존재하면 ready 상태로 설정
-      if (editor != null) {
-        setEditorReady(true);
-      }
+      // ready 상태는 실제 페이지 onPageLoad 완료 시점에만 true로 전환한다.
 
       final url = baseUrl
           .replaceAll(RegExp(r'/$'), '')
           .replaceAll('https://', 'wss://')
           .replaceAll('http://', 'ws://')
           .replaceAll('/api/v1', '/ws/v1');
-
-      debugPrint('#### web socket init base url: $baseUrl');
-      debugPrint('#### web socket init url: $url');
 
       // 이미 웹소켓이 연결되어 있으면 리턴
       if (wsManager.stompClient?.connected ?? false) {
@@ -119,25 +161,31 @@ mixin WebSocketControlMixin on GetxController {
       // 초기화 중 플래그 설정
       _isInitializing = true;
 
-      // 기존 구독들을 정리 (연결이 끊어진 경우에만)
-      if (wsManager.stompClient == null) {
-        _cancelSubscriptions();
-      }
+      // 재초기화 시 기존 로컬 스트림 리스너를 항상 정리해 중복 리슨을 방지한다.
+      _cancelSubscriptions();
+
+      // 익명 사용자일 경우 anonymousUserId를 displayName으로 사용 (예: anonymous_52f95a66)
+      final isAnonymous = documentState.rxUserId.value.isEmpty;
+      final effectiveUserId =
+          isAnonymous ? anonymousUserId : documentState.rxUserId.value;
+      final effectiveDisplayName = isAnonymous
+          ? anonymousUserId // 익명 사용자는 anonymousUserId를 displayName으로 사용
+          : (documentState.rxDisplayName.value.isEmpty
+              ? documentState.rxUserId.value
+              : documentState.rxDisplayName.value);
 
       wsManager.initialize(
         url: url,
-        // url: 'ws://localhost:80801/ws/v1',
-        userId: documentState.rxUserId.value.isEmpty
-            ? anonymousUserId
-            : documentState.rxUserId.value,
+        displayName: effectiveDisplayName,
+        userId: effectiveUserId,
+        // userId: documentState.rxUserId.value.isEmpty
+        //     ? anonymousUserId
+        //     : documentState.rxUserId.value,
         projectId: documentState.rxProjectId.value,
         pageId: documentState.rxPageCurrent.value?.idref ?? '',
         pageIdUrl: documentState.rxPageCurrent.value?.id ?? '',
         isPermission: isPermission,
       );
-      debugPrint(
-          '#### web socket stompClient init url: ${wsManager.stompClient?.config.url}');
-      debugPrint('#### web socket init url: ${url}');
 
       // 모든 스트림 리스너 설정
       // _messageSubscription = wsManager.messageStream.listen(_handleNewMessage);
@@ -151,6 +199,8 @@ mixin WebSocketControlMixin on GetxController {
                 wsManager.editorStream.listen(_handleEditorUpdate);
             debugPrint('#### 에디터 스트림 구독 완료');
           } else {
+            debugPrint(
+                '#### 에디터 스트림 구독 이미 존재: ${_editorSubscription.toString()}');
             debugPrint('#### 에디터 스트림 구독이 이미 존재하여 중복 구독 방지');
           }
         }
@@ -172,29 +222,8 @@ mixin WebSocketControlMixin on GetxController {
       wsManager.connect();
       documentUserId.value = documentState.rxUserId.value;
 
-      // DFERI 도메인: araoffice 소켓에 더해 author 베이스 소켓 클라이언트 추가 연결 (로그/진행 상황 확인용)
-      if (!AutoConfig.instance.domainType.isDferiDomain) {
-        const authorBase = 'https://www.edunavi.kr/booknavi/author';
-        final authorWsUrl = authorBase
-                .replaceAll(RegExp(r'/$'), '')
-                .replaceAll('https://', 'wss://')
-                .replaceAll('http://', 'ws://') +
-            '/ws/v1';
-        debugPrint('#### [DFERI] Author WebSocket URL: $authorWsUrl');
-        wsManager.initializeAuthorClient(
-          url: authorWsUrl,
-          userId: documentState.rxUserId.value.isEmpty
-              ? anonymousUserId
-              : documentState.rxUserId.value,
-          projectId: documentState.rxProjectId.value,
-          pageId: documentState.rxPageCurrent.value?.idref ?? '',
-          isPermission: isPermission,
-        );
-        wsManager.connectAuthorClient();
-      }
-
       // 초기화 완료 후 플래그 리셋 (약간의 지연 후)
-      Future.delayed(const Duration(milliseconds: 500), () {
+      await Future.delayed(const Duration(milliseconds: 500), () {
         _isInitializing = false;
       });
 
@@ -244,13 +273,44 @@ mixin WebSocketControlMixin on GetxController {
     }
   }
 
+  Future<void> checkIsEditingCurrentPage() async {
+    //documentState.rxPageCurrent.value?.idref ?? '' 현재 페이지id
+    try {
+      debugPrint('#### checkIsEditingCurrentPage');
+      final project =
+          await apiService.fetchProject(documentState.rxProjectId.value);
+      if (_isDisposed) return;
+      if (project == null || project.statusCode == 403) return;
+
+      // 현재 페이지 id와 동일한 페이지의 정보만 얻고 싶어 idref 사용
+      final pageId = documentState.rxPageCurrent.value?.idref ?? '';
+      if (pageId.isEmpty) return;
+      final page =
+          project.project?.pages?.firstWhere((page) => page.idref == pageId);
+      if (page?.editorUser?.displayName?.isNotEmpty ?? false) {
+        isEditingStatus.value = true;
+        isEditingPermission.value = true;
+        rxIsRequestPermission.value = true;
+        rxEditingUserId.value = page?.editorUser?.userId ?? '';
+        rxEditingDisplayName.value = page?.editorUser?.displayName ?? '';
+        rxIsEditorStatus.value = true;
+      }
+      // final treeListModel = TreeListModel.listFromJson(pages);
+      // documentUserId.value = project.project?.displayName ?? '';
+      // documentState.rxPages.value = treeListModel;
+    } catch (e, stackTrace) {
+      debugPrint('트리 리스트 변환 중 오류 발생: $e');
+      debugPrint('스택 트레이스: $stackTrace');
+    }
+  }
+
   /// 현재 프로젝트 공유 권한 상태에 따라 소켓 연결/구독을 정리하거나 보장합니다.
   /// - publicLink/userLink: 연결 보장. 이미 연결되어 있으면 재연결 없이 필요한 구독만 조정
   /// - onlyMe(비공개): 연결 해제 및 구독 해제
-  void ensureSocketForPermission({
+  Future<void> ensureSocketForPermission({
     required bool isPermission,
     ProjectAuthType? overrideShareType,
-  }) {
+  }) async {
     final share =
         overrideShareType ?? documentState.rxProjectSharePermission.value;
     final isShared = share == ProjectAuthType.publicLink ||
@@ -258,7 +318,7 @@ mixin WebSocketControlMixin on GetxController {
 
     if (!isShared) {
       // 비공개: 연결 해제 (이미 해제면 무시)
-      if (wsManager.isConnected) {
+      if (isSocketConnectedByEvent) {
         disposeWebSocket();
       }
       return;
@@ -287,7 +347,7 @@ mixin WebSocketControlMixin on GetxController {
     if (!isConnected) {
       // 연결되어 있지 않을 때만 초기화
       debugPrint('#### WebSocket 연결되지 않음, 초기화 시작');
-      initializeWebSocket(isPermission: isPermission);
+      await initializeWebSocket(isPermission: isPermission);
       return; // 초기화 과정에서 connect 및 기본 구독 설정
     }
 
@@ -312,7 +372,7 @@ mixin WebSocketControlMixin on GetxController {
         debugPrint('######_handleEditorUpdate: message is null');
         return;
       }
-      logger.d('######에디터 편집 유저 정보: data: ${data.toJson()}');
+      debugPrint('######에디터 편집 유저 정보: data: ${data.toJson()}');
 
       // final data = EditorDataResponse.fromJson(message);
       final userId = data.id ?? '';
@@ -327,17 +387,23 @@ mixin WebSocketControlMixin on GetxController {
         rxEditingDisplayName.value = displayName;
         rxIsEditorStatus.value = true;
         debugPrint('######_handleEditorUpdate: userId is null');
-        editor?.enable(true);
+        setEditorEnabledSafely(
+          true,
+          reason: '_handleEditorUpdate:no-owner',
+        );
       } else if (userId == documentState.rxUserId.value) {
         debugPrint('######_handleEditorUpdate: userId is self $userId');
         // 자신 - 편집 가능
         isEditingStatus.value = false;
         isEditingPermission.value = true;
         rxEditingUserId.value = userId;
-        rxIsRequestPermission.value = false;
+        rxIsRequestPermission.value = false; // 이미 점유 상태
         rxIsEditorStatus.value = true;
         rxEditingDisplayName.value = displayName;
-        editor?.enable(true);
+        setEditorEnabledSafely(
+          true,
+          reason: '_handleEditorUpdate:self',
+        );
       } else {
         debugPrint('######_handleEditorUpdate: userId is other');
         // 다른 사용자 - 편집 불가
@@ -347,7 +413,8 @@ mixin WebSocketControlMixin on GetxController {
         rxIsRequestPermission.value = false;
         rxIsEditorStatus.value = false;
         rxEditingDisplayName.value = displayName;
-        editor?.enable(false);
+        setEditorEnabledSafely(false, reason: '_handleEditorUpdate:other');
+        onEditorPermissionLost();
       }
     } catch (e) {
       debugPrint('######_handleEditorUpdate 오류: $e');
@@ -367,7 +434,7 @@ mixin WebSocketControlMixin on GetxController {
 
       final coordinates = data.cursorPosition!.split('/');
       if (coordinates.length != 2) {
-        // debugPrint('잘못된 커서 위치 형식: $cursorPosition');
+        // logger.e('잘못된 커서 위치 형식: $cursorPosition');
         return;
       }
 
@@ -392,8 +459,16 @@ mixin WebSocketControlMixin on GetxController {
       final correctedY = y - (rxScrollPositionY.value / scale);
 
       try {
-        _updateCursorWithCorrection(data.userId!, correctedX, correctedY, scale,
-            data.cursorAction ?? 'none', data.isMouseDown ?? 'false');
+        // _updateCursorWithCorrection(data.userId!, correctedX, correctedY, scale,
+        //     data.cursorAction ?? 'none', data.isMouseDown ?? 'false');
+        _updateCursorWithCorrection(
+            data.userId!,
+            data.displayName!,
+            correctedX,
+            correctedY,
+            scale,
+            data.cursorAction ?? 'none',
+            data.isMouseDown ?? 'false');
       } catch (e) {
         debugPrint('커서 업데이트 중 오류 발생: $e');
       }
@@ -403,9 +478,10 @@ mixin WebSocketControlMixin on GetxController {
     }
   }
 
-  /// 커서 위치 보정 및 업데이트
+   /// 커서 위치 보정 및 업데이트
   void _updateCursorWithCorrection(
       String userId,
+      String displayName,
       double correctedX,
       double correctedY,
       double scale,
@@ -413,6 +489,7 @@ mixin WebSocketControlMixin on GetxController {
       String isMouseDown) {
     try {
       final data = {
+        'displayName': displayName,
         'x': correctedX,
         'y': correctedY,
         'cursorAction': cursorAction,
@@ -424,7 +501,7 @@ mixin WebSocketControlMixin on GetxController {
     }
   }
 
-  /// 안전한 에디터 작업 수행
+   /// 안전한 에디터 작업 수행
   Future<void> safeEditorOperation(Future<void> Function() operation) async {
     if (!isEditorReady) {
       debugPrint('#### Editor is not ready, skipping operation');
@@ -495,11 +572,11 @@ mixin WebSocketControlMixin on GetxController {
   void _handlePauseStateUpdate(bool isPause) {
     if (isPause) {
       EasyLoading.showInfo('목차 업데이트 중이므로 작업이 일시정지되었습니다.');
-      editor?.enable(false);
+      setEditorEnabledSafely(false, reason: '_handlePauseStateUpdate:pause');
       rxIsPause.value = true;
     } else {
       EasyLoading.showInfo('목차 업데이트 완료되었습니다.');
-      editor?.enable(true);
+      setEditorEnabledSafely(true, reason: '_handlePauseStateUpdate:resume');
       rxIsPause.value = false;
     }
     debugPrint('#### _handlePauseStateUpdate: $isPause');
@@ -507,18 +584,28 @@ mixin WebSocketControlMixin on GetxController {
 
   /// 트리 리스트 업데이트 처리
   void _handleTreeListUpdate(TreeListResponse data) {
+    if (_isDisposed) return;
     debugPrint('#### _handleTreeListUpdate data: ${data.toJson()}');
     final projectId = data.data;
     final userId = data.userId;
 
     Future.delayed(const Duration(seconds: 1), () async {
+      if (_isDisposed) return;
+      if (projectId == null || projectId.isEmpty) return;
+      if (documentState.rxProjectId.value != projectId) return;
+
       try {
         final result = await compareUserId(userId ?? '');
         if (!result) {
-          final data = await apiService.fetchProject('$projectId');
-          final pages = data?.project?.toPageJson();
-          final treeListModel = TreeListModel.listFromJson(pages!);
-          documentUserId.value = data?.project?.displayName ?? '';
+          final project = await apiService.fetchProject('$projectId');
+          if (_isDisposed) return;
+          if (project == null || project.statusCode == 403) return;
+
+          final pages = project.project?.toPageJson();
+          if (pages == null) return;
+
+          final treeListModel = TreeListModel.listFromJson(pages);
+          documentUserId.value = project.project?.displayName ?? '';
           documentState.rxPages.value = treeListModel;
         }
       } catch (e, stackTrace) {
@@ -530,40 +617,54 @@ mixin WebSocketControlMixin on GetxController {
 
   Future<bool> compareUserId(String userId) async {
     final result = await loginService.userInfo();
-    logger.d(
+    debugPrint(
         '#### compareUserId result: ${result?.userId} projectOwner: ${documentState.rxProjectOwner.value}');
     // return result?.userId == documentState.rxProjectOwner.value ? true : false;
     return result?.userId == userId ? true : false;
   }
 
+  Future<void> reConnectTreeList() async {
+    final project =
+        await apiService.fetchProject(documentState.rxProjectId.value);
+    if (project == null || project.statusCode == 403) return;
+
+    final pages = project.project?.toPageJson();
+    if (pages == null) return;
+
+    final treeListModel = TreeListModel.listFromJson(pages);
+    documentUserId.value = project.project?.displayName ?? '';
+    documentState.rxPages.value = treeListModel;
+  }
+
   void _handleConnectionState(bool isConnected) {
     try {
-      logger.i('연결 상태: ${isConnected ? "연결됨" : "연결 해제됨"}');
+      _isSocketConnectedByEvent = isConnected;
+      rxSocketConnectedByEvent.value = isConnected;
+      debugPrint('연결 상태: ${isConnected ? "연결됨" : "연결 해제됨"}');
 
       if (isConnected) {
         // 연결 성공 시 초기화 플래그 리셋
         _isInitializing = false;
+        // 여기서 페이지 편집중인 유저가 있는지 먼저 확인 후 있다면 셋팅 후 동작
+        // checkIsEditingCurrentPage();
+        reConnectTreeList();
       } else {
         // 연결이 끊어졌을 때 에디터 상태 초기화
         setEditorReady(false);
         _editorOperationTimer?.cancel();
 
-        if (!wsManager.isIntentionalDisconnect && !_isInitializing) {
-          // 의도적인 연결 해제가 아니고 초기화 중이 아닐 때만 재연결 시도 (최대 3회)
-          Future.delayed(const Duration(seconds: 3), () {
-            if (!wsManager.isConnected && !_isInitializing) {
-              wsManager.incrementReconnectAttempt();
-              if (!wsManager.canAttemptReconnect) {
-                debugPrint('#### WebSocket 재연결 최대 횟수(3) 초과, 재시도 중단');
-                return;
-              }
-              debugPrint('#### WebSocket 재연결 시도 (${wsManager.reconnectAttemptCount}/3)');
-              wsManager.connect();
-            } else {
-              debugPrint('#### WebSocket이 이미 연결되었거나 초기화 중이어서 재연결 건너뜀');
-            }
-          });
-        }
+        // if (!wsManager.isIntentionalDisconnect && !_isInitializing) {
+        //   // 의도적인 연결 해제가 아니고 초기화 중이 아닐 때만 재연결 시도
+        //   Future.delayed(const Duration(seconds: 3), () {
+        //     // 재연결 시도 전에 다시 한 번 체크
+        //     if (!wsManager.isConnected && !_isInitializing) {
+        //       debugPrint('#### WebSocket 재연결 시도');
+        //       wsManager.connect();
+        //     } else {
+        //       debugPrint('#### WebSocket이 이미 연결되었거나 초기화 중이어서 재연결 건너뜀');
+        //     }
+        //   });
+        // }
       }
     } catch (e, stackTrace) {
       debugPrint('#### Error in _handleConnectionState: $e');
@@ -594,12 +695,18 @@ mixin WebSocketControlMixin on GetxController {
       return;
     }
 
-    if (documentState.rxProjectSharePermission.value ==
-            ProjectAuthType.publicLink ||
-        documentState.rxProjectSharePermission.value ==
-            ProjectAuthType.userLink) {
+    if (documentState.hasSharedPermission) {
+      // 익명 사용자일 경우 anonymousUserId를 displayName으로 사용
+      final isAnonymous = documentState.rxUserId.value.isEmpty;
+      final effectiveDisplayName = isAnonymous
+          ? anonymousUserId
+          : (documentState.rxDisplayName.value.isEmpty
+              ? documentState.rxUserId.value
+              : documentState.rxDisplayName.value);
+
       wsManager.sendCursorPosition(
           documentState.rxProjectId.value,
+          effectiveDisplayName,
           documentState.rxPageCurrent.value?.idref ?? 'cover.xhtml',
           x,
           y,
@@ -624,16 +731,21 @@ mixin WebSocketControlMixin on GetxController {
 
   void updateUserCursorPosition(String userId, Map<String, dynamic> data) {
     try {
+      final displayName = data['displayName'] as String? ?? '';
       final x = data['x'] as double? ?? 0.0;
       final y = data['y'] as double? ?? 0.0;
       final cursorAction = data['cursorAction'] as String? ?? 'none';
       final isMouseDown = data['isMouseDown'] as String? ?? 'false';
 
-      cursors[userId] = {'x': x, 'y': y};
+      // cursors[userId] = {'x': x, 'y': y};
+      // userId를 키로 사용하고, displayName은 값에 포함
+      cursors[userId] = {'x': x, 'y': y, 'displayName': displayName};
 
       switch (cursorAction) {
         case 'none':
-          updateTrailPosition(userId: userId, x: x, y: y);
+          // updateTrailPosition(userId: userId, x: x, y: y);
+          updateTrailPosition(
+              userId: userId, displayName: displayName, x: x, y: y);
           break;
         case 'drawing':
           if (isMouseDown == 'true' && editor != null) {
@@ -667,10 +779,18 @@ mixin WebSocketControlMixin on GetxController {
       disposeRefreshSubscription();
       disposeEditorSubscription();
 
+      if (!wsManager.isConnected) {
+        debugPrint('#### WebSocket 미연결 상태 - 페이지 변경 구독은 연결 후 재설정');
+        initializeWebSocket(isPermission: isPermission);
+        return;
+      }
+
       // 새로운 구독 설정
       subscribeCursor();
       subscribeRefresh();
-      subscribeEditor();
+      if (isPermission) {
+        subscribeEditor();
+      }
 
       // 이전 커서 제거
       final userId = documentState.rxUserId.value.isEmpty
@@ -751,6 +871,10 @@ mixin WebSocketControlMixin on GetxController {
   /// 커서 구독 설정
   void subscribeCursor() {
     try {
+      if (!isSocketConnectedByEvent) {
+        debugPrint('커서 구독 설정 생략: WebSocket 미연결');
+        return;
+      }
       wsManager.connectCursor(
         documentState.rxProjectId.value,
         documentState.rxPageCurrent.value?.idref ?? '',
@@ -766,6 +890,10 @@ mixin WebSocketControlMixin on GetxController {
   /// 사용자 목록 구독 설정
   void subscribeUserListInfo() {
     try {
+      if (!isSocketConnectedByEvent) {
+        debugPrint('사용자 목록 구독 설정 생략: WebSocket 미연결');
+        return;
+      }
       wsManager.connectUserListInfo(documentState.rxProjectId.value);
       _userListInfoSubscription =
           wsManager.userListInfoStream.listen(_handleUserListUpdate);
@@ -778,13 +906,17 @@ mixin WebSocketControlMixin on GetxController {
   /// 새로고침 구독 설정
   void subscribeRefresh() {
     try {
+      if (!isSocketConnectedByEvent) {
+        debugPrint('새로고침 구독 설정 생략: WebSocket 미연결');
+        return;
+      }
       wsManager.connectRefresh(
         documentState.rxProjectId.value,
         documentState.rxPageCurrent.value?.idref ?? '',
       );
       _refreshResponseSubscription =
           wsManager.refreshResponseStream.listen(_handleRefreshResponse);
-      logger.d('새로고침 구독 설정 완료');
+      debugPrint('새로고침 구독 설정 완료');
     } catch (e) {
       debugPrint('새로고침 구독 설정 중 오류 발생: $e');
     }
@@ -793,10 +925,14 @@ mixin WebSocketControlMixin on GetxController {
   /// 트리 리스트 구독 설정
   void subscribeTreeList() {
     try {
+      if (!isSocketConnectedByEvent) {
+        debugPrint('트리 리스트 구독 설정 생략: WebSocket 미연결');
+        return;
+      }
       wsManager.connectTreeList(documentState.rxProjectId.value);
       _treeListSubscription =
           wsManager.treeListStream.listen(_handleTreeListUpdate);
-      logger.d('트리 리스트 구독 설정 완료');
+      debugPrint('트리 리스트 구독 설정 완료');
     } catch (e) {
       debugPrint('트리 리스트 구독 설정 중 오류 발생: $e');
     }
@@ -805,6 +941,10 @@ mixin WebSocketControlMixin on GetxController {
   /// 에디터 구독 설정
   void subscribeEditor() {
     try {
+      if (!isSocketConnectedByEvent) {
+        debugPrint('에디터 구독 설정 생략: WebSocket 미연결');
+        return;
+      }
       wsManager.connectEditor(
         documentState.rxProjectId.value,
         documentState.rxPageCurrent.value?.id ?? '',
@@ -831,6 +971,8 @@ mixin WebSocketControlMixin on GetxController {
   void disposeWebSocket() {
     try {
       debugPrint('#### Disposing WebSocket connections and resources');
+      _isSocketConnectedByEvent = false;
+      rxSocketConnectedByEvent.value = false;
 
       // disposed 상태로 설정
       _isDisposed = true;
@@ -865,32 +1007,34 @@ mixin WebSocketControlMixin on GetxController {
   }
 
   void updateTrailPosition({
+    required String displayName,
     required double x,
     required double y,
     required String userId,
   }) {
+    if (displayName.isEmpty) return;
     if (x == 0 && y == 0) return;
 
-    if (!cursorTrails.containsKey(userId)) {
-      cursorTrails[userId] = <Offset>[].obs;
+    if (!cursorTrails.containsKey(displayName)) {
+      cursorTrails[displayName] = <Offset>[].obs;
     }
-    if (!newCursorPoints.containsKey(userId)) {
-      newCursorPoints[userId] = <Offset>[].obs;
+    if (!newCursorPoints.containsKey(displayName)) {
+      newCursorPoints[displayName] = <Offset>[].obs;
     }
 
     final point = Offset(x, y);
-    cursorTrails[userId]!.add(point);
-    newCursorPoints[userId]!.add(point);
+    cursorTrails[displayName]!.add(point);
+    newCursorPoints[displayName]!.add(point);
     update();
   }
 
-  void eraseTrail(String userId) {
-    cursorTrails[userId]?.clear();
-    newCursorPoints[userId]?.clear();
+  void eraseTrail(String displayName) {
+    cursorTrails[displayName]?.clear();
+    newCursorPoints[displayName]?.clear();
     update();
   }
 
-  void clearNewPoints(String userId) {
+  void clearNewPoints(String displayName) {
     newCursorPoints.clear();
     update();
   }
@@ -921,6 +1065,7 @@ class EditorDataResponse {
 
 class MouseDataResponse {
   final String? userId;
+  final String? displayName;
   final String? pageId;
   final String? cursorPosition;
   final String? cursorAction;
@@ -928,6 +1073,7 @@ class MouseDataResponse {
 
   MouseDataResponse({
     this.userId,
+    this.displayName,
     this.pageId,
     this.cursorPosition,
     this.cursorAction,
@@ -938,6 +1084,7 @@ class MouseDataResponse {
     return MouseDataResponse(
       userId: json['userId'] as String?,
       pageId: json['pageId'] as String?,
+      displayName: json['displayName'] as String?,
       cursorPosition: json['cursorPosition'] as String?,
       cursorAction: json['cursorAction'] as String?,
       isMouseDown: json['isMouseDown'] as String?,
@@ -948,6 +1095,7 @@ class MouseDataResponse {
     return {
       'userId': userId,
       'pageId': pageId,
+      'displayName': displayName,
       'cursorPosition': cursorPosition,
       'cursorAction': cursorAction,
       'isMouseDown': isMouseDown,

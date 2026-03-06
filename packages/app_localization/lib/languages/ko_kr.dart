@@ -427,6 +427,7 @@ const Map<String, String> koKr = {
   'coop_mode_countdown': '편집 시간',
   'coop_mode_countdown_message': '공동 편집 시간이 종료되었습니다.',
   'coop_mode_countdown_seconds': '남은 시간 %s : %s',
+  'connected_user_list_online': '접속중인 유저 %s명',
 
   // Widget
   'slider': '슬라이더',

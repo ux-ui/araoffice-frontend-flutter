@@ -267,7 +267,7 @@ class EditorShareDialog extends StatelessWidget with EditorEventbus {
                   }
                   controller.rxIsCoopMode.value = true;
                   controller.showEditorUser(projectId);
-                  controller.ensureSocketForPermission(
+                  await controller.ensureSocketForPermission(
                       isPermission: permission);
                   controller.wsManager.sendPageEditorResponse(projectId,
                       controller.documentState.rxPageCurrent.value?.id ?? '');
@@ -278,12 +278,12 @@ class EditorShareDialog extends StatelessWidget with EditorEventbus {
                   }
                   controller.rxIsCoopMode.value = true;
                   controller.showEditorUser(projectId);
-                  controller.ensureSocketForPermission(
+                 await controller.ensureSocketForPermission(
                       isPermission: permission);
                   controller.wsManager.sendPageEditorResponse(projectId,
                       controller.documentState.rxPageCurrent.value?.id ?? '');
                 } else {
-                  controller.ensureSocketForPermission(
+                 await controller.ensureSocketForPermission(
                       isPermission: permission);
                   controller.rxIsDrawingMode.value = false;
                   controller.connectedUserList.clear();

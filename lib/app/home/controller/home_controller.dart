@@ -28,12 +28,12 @@ class HomeController extends GetxController {
     _initalizeSubController();
     setUserId();
     // 사용자 상태 확인 (한 번만 실행)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+   WidgetsBinding.instance.addPostFrameCallback((_) async {
       final context = Get.context;
-      if (context != null) {
-        loginController.checkUserSignStatus(context);
-        loginController.checkUserShareId(context);
+      if (context == null || !context.mounted) {
+        return;
       }
+      await loginController.checkUserSignStatus(context);
     });
   }
 

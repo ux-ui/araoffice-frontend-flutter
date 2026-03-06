@@ -62,16 +62,16 @@ class App extends StatelessWidget {
                 if (result.isLoggedIn) {
                   final currentLocation =
                       goRouter.routerDelegate.currentConfiguration.uri.path;
-                  debugPrint(
-                      'Login status - current location: $currentLocation');
+                  // debugPrint(
+                  //     'Login status - current location: $currentLocation');
                   // 로그인 페이지에 있을 때만 홈으로 리다이렉트
                   if (currentLocation == '/') {
-                    debugPrint(
-                        'Login status - redirecting to home from login page');
+                    // debugPrint(
+                    //     'Login status - redirecting to home from login page');
                     goRouter.go('/home');
                   } else {
-                    debugPrint(
-                        'Login status - staying on current page: $currentLocation');
+                    // debugPrint(
+                    //     'Login status - staying on current page: $currentLocation');
                   }
                 }
               }
@@ -79,22 +79,22 @@ class App extends StatelessWidget {
           } else {
             LoginController().checkLoginStatus(message).then((result) {
               if (result != null) {
-                debugPrint(
-                    'Login status - isLoggedIn: ${result.isLoggedIn}, userLoginType: ${result.userLoginType}');
+                // debugPrint(
+                //     'Login status - isLoggedIn: ${result.isLoggedIn}, userLoginType: ${result.userLoginType}');
                 // 로그인 성공 시 현재 경로가 로그인 페이지가 아니면 리다이렉트하지 않음
                 if (result.isLoggedIn) {
                   final currentLocation =
                       goRouter.routerDelegate.currentConfiguration.uri.path;
-                  debugPrint(
-                      'Login status - current location: $currentLocation');
+                  // debugPrint(
+                  //     'Login status - current location: $currentLocation');
                   // 로그인 페이지에 있을 때만 홈으로 리다이렉트
                   if (currentLocation == '/') {
-                    debugPrint(
-                        'Login status - redirecting to home from login page');
+                    // debugPrint(
+                    //     'Login status - redirecting to home from login page');
                     goRouter.go('/home');
                   } else {
-                    debugPrint(
-                        'Login status - staying on current page: $currentLocation');
+                    // debugPrint(
+                    //     'Login status - staying on current page: $currentLocation');
                   }
                 }
               }
