@@ -28,7 +28,7 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     Locale deviceLocale = View.of(context).platformDispatcher.locale;
     return GetMaterialApp.router(
-      title: 'ARA Office',
+      title: 'booknavi 전자책 저작 플랫폼',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.light,
       theme: const AppTheme().themeData,
