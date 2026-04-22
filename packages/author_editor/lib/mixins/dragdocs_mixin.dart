@@ -1,4 +1,5 @@
 // lib/mixins/media_control_mixin.dart
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:app_ui/widgets/vulcanx/vulcan_x_close_dialog_widget.dart';
@@ -54,6 +55,8 @@ mixin DragDocsMixin on GetxController {
   DocumentState get documentState;
   VulcanCloseDialogWidget? _dragDocsDialog;
   final rxConvertOfficeDoc = Rx<int>(1);
+  final _convertedPages = <int>[];
+  Timer? _convertTimeoutTimer;
 
   Future<PlatformFile?> pickDocumentFile(
     BuildContext context, {
@@ -69,14 +72,25 @@ mixin DragDocsMixin on GetxController {
       allowedExtensions: allowedExtensions,
     );
 
-    if (result != null && result.files.isNotEmpty) {
+    if (result == null || result.files.isEmpty) {
+      return null;
+    } else {
       PlatformFile file = result.files.first;
-      String fileExtension = file.extension ?? '';
-      Uint8List fileBytes = file.bytes ?? Uint8List(0);
-
-      if (allowedExtensions.contains(fileExtension) && fileBytes.isNotEmpty) {
-        return file;
+      final supportedExtension = allowedExtensions.contains(file.extension);
+      if (!supportedExtension) {
+        if (context.mounted) {
+          await showDragDocsAlertDialog(context, 'document_unsupported'.tr);
+        }
+        return null;
       }
+    }
+
+    PlatformFile file = result.files.first;
+    String fileExtension = file.extension ?? '';
+    Uint8List fileBytes = file.bytes ?? Uint8List(0);
+
+    if (allowedExtensions.contains(fileExtension) && fileBytes.isNotEmpty) {
+      return file;
     }
 
     return null;
@@ -130,39 +144,67 @@ mixin DragDocsMixin on GetxController {
               450,
           height: contentHeight - 60,
           readOnly: false,
-          onConvert: (result, fileName, page, content) async {
+          exportAll: false,
+          onOpen: (result) {
+            if (result <= 0) {
+              logger.d('[OfficeIframe][onOpen] open failed: $result');
+              EasyLoading.showError('${'document_open_failed'.tr}: $result');
+              _dragDocsDialog?.close();
+              _dragDocsDialog = null;
+            } else {
+              logger.d('[OfficeIframe][onOpen] open success');
+            }
+          },
+          onConvert: (result, fileName, page, total, content) async {
             logger.d(
-                '[OfficeIframe][onConvert] result: $result, fileName: $fileName, page: $page');
+                '[OfficeIframe][onConvert] result: $result, fileName: $fileName, page: $page, total: $total');
 
+            // 변환 중 오류 발생
             if (result == -3) {
               // 미지원
+              _cancelConvertingTimeout();
               EasyLoading.dismiss();
               await showDragDocsAlertDialog(context, 'document_unsupported'.tr);
               return;
-            } else if (result == 1) {
+            } else if (result <= 0) {
+              // 엔진 에러
+              _cancelConvertingTimeout();
+              EasyLoading.dismiss();
+              await showDragDocsAlertDialog(
+                  context, '${'document_conversion_error'.tr} ($result)');
+              return;
+            }
+
+            // 변환 완료
+            if (result == 1) {
+              _cancelConvertingTimeout();
               EasyLoading.dismiss();
               if (rxConvertOfficeDoc.value != 2) {
                 // 페이지 내보내기 없이 완료 응답(result == 1)이 온 경우
                 await showDragDocsAlertDialog(
                     context, 'document_invalid_page'.tr);
               } else {
-                EasyLoading.dismiss();
-                EasyLoading.showSuccess('document_conversion_completed'.tr);
-                _dragDocsDialog?.close();
-                _dragDocsDialog = null;
+                await EasyLoading.showSuccess(
+                    'document_conversion_completed'.tr);
               }
-              return;
-            } else if (result <= 0) {
-              // 엔진 에러
-              EasyLoading.dismiss();
-              await showDragDocsAlertDialog(
-                  context, '${'document_error'.tr} ($result)');
+              _dragDocsDialog?.close();
+              _dragDocsDialog = null;
               return;
             }
 
-            if (!EasyLoading.isShow) {
-              EasyLoading.show();
+            // result == 2 [page] 변환 성공, 변환 중
+            _convertedPages.add(page);
+            if (total > 1) {
+              EasyLoading.showProgress(
+                _convertedPages.length / total,
+                status:
+                    '${'document_converting'.tr} ${_convertedPages.length}/$total',
+              );
+            } else {
+              EasyLoading.show(status: 'document_converting'.tr);
             }
+            _resetConvertingTimeout();
+
             controller.rxConvertOfficeDoc.value = result;
             // once(rxConvertOfficeDoc, (int value) {
             //   if (value != 2) {
@@ -171,9 +213,16 @@ mixin DragDocsMixin on GetxController {
             //   }
             // });
 
-            final isSuccess =
-                _convertOfficeDoc(result, fileName, page, content);
+            final isSuccess = _convertOfficeDoc(
+              result,
+              fileName,
+              page,
+              total,
+              content,
+            );
+
             if (isSuccess != true) {
+              _cancelConvertingTimeout();
               EasyLoading.dismiss();
               await showDragDocsAlertDialog(
                   context, 'document_invalid_data'.tr);
@@ -185,15 +234,37 @@ mixin DragDocsMixin on GetxController {
     );
 
     rxConvertOfficeDoc.value = 1;
+    _convertedPages.clear();
     await _dragDocsDialog?.show(context);
+    _cancelConvertingTimeout();
     _dragDocsDialog = null;
     rxConvertOfficeDoc.value = 1;
+    _convertedPages.clear();
+  }
+
+  /// 알 수 없는 이유로 변환 완료 처리가 되지 않고 대기 시간(10초)이 초과되면
+  /// 변환 중단 처리하고 뷰어를 닫는다.
+  void _resetConvertingTimeout() {
+    _convertTimeoutTimer?.cancel();
+    _convertTimeoutTimer = Timer(const Duration(seconds: 10), () {
+      logger.e('[OfficeIframe] Converting timeout');
+      _convertTimeoutTimer = null;
+      EasyLoading.dismiss();
+      _dragDocsDialog?.close();
+      _dragDocsDialog = null;
+    });
+  }
+
+  void _cancelConvertingTimeout() {
+    _convertTimeoutTimer?.cancel();
+    _convertTimeoutTimer = null;
   }
 
   bool _convertOfficeDoc(
     int result,
     String fileName,
     int page,
+    int total,
     String content,
   ) {
     final controller = Get.find<VulcanEditorController>();
@@ -202,6 +273,7 @@ mixin DragDocsMixin on GetxController {
       result,
       fileName,
       page,
+      total,
       content,
     );
   }

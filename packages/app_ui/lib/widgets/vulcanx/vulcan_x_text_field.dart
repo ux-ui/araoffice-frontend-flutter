@@ -32,6 +32,8 @@ class VulcanXTextField extends VulcanXStatelessWidget {
   final Function()? onEditingComplete;
   final String? errorText;
   final int? maxLength;
+  final int? maxLines;
+  final TextInputAction? textInputAction;
   final List<TextInputFormatter>? inputFormatters;
   const VulcanXTextField({
     super.key,
@@ -62,6 +64,8 @@ class VulcanXTextField extends VulcanXStatelessWidget {
     this.onEditingComplete,
     this.errorText,
     this.maxLength,
+    this.maxLines,
+    this.textInputAction,
     this.inputFormatters,
   });
 
@@ -93,6 +97,8 @@ class VulcanXTextField extends VulcanXStatelessWidget {
       child: TextFormField(
           controller: controller,
           textAlign: textAlign ?? TextAlign.start,
+          maxLines: maxLines,
+          textInputAction: textInputAction,
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(color: context.surfaceContainerHigh),

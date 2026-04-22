@@ -8,11 +8,11 @@ const Map<String, String> idId = {
   'input_hint_message': 'Silakan masukkan kata kunci pencarian',
   'hint_text_file_project_search': 'Cari file atau proyek',
   'resource_management': 'Manajemen Sumber Daya',
+  'resource_delete_error': 'Gagal menghapus sumber daya',
+  'resource_delete_error_message':
+      'File %s is used in %s page, so it cannot be deleted',
   'upgrade_plan': 'Tingkatkan Paket',
   'notify': 'Notifikasi',
-  'share_id': 'ID Berbagi',
-  'copy_success': 'berhasil disalin.',
-  'share_id_change_popup_title': 'Pengaturan ID Berbagi pertama kali',
   'created_folder_input_name_hint': 'Silakan masukkan nama folder.',
   'created_folder_input_message':
       '* Nama folder bisa terdiri dari 2-20 karakter.',
@@ -43,7 +43,9 @@ const Map<String, String> idId = {
   'folder_copy_title': 'Salin Folder',
   'folder_delete_title': 'Hapus Folder',
   'project_delete_title': 'Hapus Proyek',
+  'project_delete_failed': 'Gagal menghapus proyek',
   'delete': 'Hapus',
+  'link_off': 'Hapus Tautan',
   'delete_message': 'Apakah Anda yakin ingin menghapusnya?',
   'no_project_message':
       'Buat buku Anda sendiri\nMudah dibuat dengan OSER DABONDA!',
@@ -64,6 +66,7 @@ const Map<String, String> idId = {
   'file_and_project': 'File dan Proyek',
   'tutorial': 'Tutorial',
   'faq': 'Pertanyaan Umum',
+  'platform_shortcut': 'Platform Shortcut',
   'template_market': 'Pasar Template',
   'templeate_market_message':
       'Gunakan berbagai template tanpa khawatir tentang hak cipta',
@@ -157,6 +160,7 @@ const Map<String, String> idId = {
   'line_spacing': 'Jarak Baris',
   'letter_spacing': 'Jarak Huruf',
   'font_width': 'Lebar Font',
+  'font_width_unsupported': 'Fitur ini tidak tersedia untuk font yang dipilih',
   'multiple_steps': 'Multi Kolom',
   'short_interval': 'Jarak Kolom',
   'direction_paragraphs': 'Arah Paragraf',
@@ -198,12 +202,20 @@ const Map<String, String> idId = {
   'position': 'Posisi',
   'paragraph': 'Paragraf',
   'layer': 'Lapisan',
+  'select_item_list': 'Pilih Item',
+  'view_column_open_tooltip': 'Buka panel kiri dan kanan',
+  'view_column_close_tooltip': 'Tutup panel kiri dan kanan',
+  'selected_items': 'Dipilih %s item',
   'document_setting': 'Pengaturan Dokumen',
   'page_rename_title': 'Ubah Nama Halaman',
   'page_rename_message': 'Silakan masukkan nama halaman baru.',
   'page_add_child': 'Tambah Subhalaman',
   'page_copy': 'Salin Halaman',
   'page_delete': 'Hapus Halaman',
+  'page_delete_minimum_message':
+      'Tidak dapat menghapus ketika hanya tersisa satu halaman.',
+  'page_reorder_mode': 'Mode urutan',
+  'page_reorder_mode_exit': 'Keluar mode urutan',
   'input_page_rename_hint': 'Silakan masukkan nama.',
   'spacing': 'Jarak',
   'zindex': 'Urutan',
@@ -212,6 +224,9 @@ const Map<String, String> idId = {
   'math_edit_button': 'Edit Matematika',
   'insert': 'Sisipkan',
   'hyperlink': 'Hyperlink',
+  'hyperlink_internal_page': 'Tautan ke halaman dalam dokumen',
+  'hyperlink_select_page_hint': 'Pilih halaman',
+  'hyperlink_no_linkable_pages': 'Tidak ada halaman yang dapat ditautkan',
   'share': 'Bagikan',
   'more_menu': 'Lihat Menu Lagi',
   'more_items': 'Lihat Lagi',
@@ -229,6 +244,7 @@ const Map<String, String> idId = {
   'no_permission': 'Tidak Ada Izin',
 
   'background_image': 'Gambar Latar Belakang',
+  'image_popup_menu_tooltip': 'Pilih Gambar',
   'repeat': 'Ulangi',
   'close': 'Tutup',
   'editor': 'Editor',
@@ -388,6 +404,7 @@ const Map<String, String> idId = {
   'PUBLICLINK': 'Semua Pengguna dengan Tautan',
   'USERLINK': 'Pengguna dengan Izin',
   'ONLYME': 'Proyek Pribadi',
+  'SHARED': 'Proyek Berbagi',
 
   // Edit Permission
   'page_edit_permission': 'Ubah Izin Akses Halaman',
@@ -411,7 +428,7 @@ const Map<String, String> idId = {
   'coop_mode_countdown': 'Waktu Edit',
   'coop_mode_countdown_message': 'Waktu edit bersama telah berakhir.',
   'coop_mode_countdown_seconds': 'Waktu tersisa %s : %s',
-  'connected_user_list_online': 'Pengguna Online %s',
+  'connected_user_list_online': 'Pengguna Online %s orang',
 
   // Widget
   'slider': 'Slider',
@@ -658,22 +675,6 @@ const Map<String, String> idId = {
   'shared_project_input_id_message': 'Masukkan ID pengguna yang akan dibagikan',
   'shared_project_input_id_message_sub': 'Format ID tidak valid',
   'shared_project_input_email_message_sub': 'Format email tidak valid',
-  'shared_project_user_add_type': 'Jenis Pengguna yang Akan Ditambahkan',
-  'shared_project_user_add_type_email': 'Email',
-  'shared_project_user_add_type_id': 'ID',
-  'shared_project_user_add_type_share_id': 'Share ID',
-  'shared_project_user_add_type_user_id': 'User ID',
-  'shared_project_user_add_type_email_hint':
-      'Masukkan email pengguna yang akan dibagikan',
-  'shared_project_user_add_type_user_id_hint':
-      'Masukkan ID pengguna yang akan dibagikan',
-  'shared_project_user_add_type_id_hint':
-      'Masukkan ID pengguna yang akan dibagikan',
-  'shared_project_user_add_type_email_hint_sub': 'Format email tidak valid',
-  'shared_project_user_add_type_id_hint_sub': 'Format ID tidak valid',
-  'shared_project_user_add_type_email_hint_sub_sub': 'Format email tidak valid',
-  'shared_project_user_add_type_id_hint_sub_sub': 'Format ID tidak valid',
-  'shared_project_edit_count_change': 'Ubah Waktu Edit',
   'shared_users': 'Pengguna Berbagi',
   'shared_users_count': 'Jumlah Pengguna Berbagi',
   'shared_title': 'Bagikan',
@@ -991,7 +992,8 @@ const Map<String, String> idId = {
   'splash_slide5_content':
       'You\'re ready to easily and quickly create e-books and share them.',
 
-  'document_importing': 'Document importing...',
+  'document_converting': 'Document converting...',
+  'document_creating': 'Document creating',
   'document_import_success': 'Document import success',
   'document_import_failed': 'Document import failed',
   'document_import_failed_error': 'Document import failed',
@@ -1001,7 +1003,39 @@ const Map<String, String> idId = {
   'document_error': 'Error occurred',
   'document_conversion_completed': 'Conversion completed',
 
+  'media_unsupported_audio': 'Unsupported audio',
+  'media_unsupported_image': 'Unsupported image',
+  'media_unsupported_video': 'Unsupported video',
+
   'default_font': 'System Default',
 
   'change_image': 'Ubah Gambar',
+
+  // Subscription Limits
+  'subscription_project_limit_exceeded':
+      'Batas pembuatan proyek telah terlampaui. Silakan perbarui plan Anda.',
+  'subscription_page_limit_exceeded':
+      'Batas pembuatan halaman telah terlampaui. Silakan perbarui plan Anda.',
+  'subscription_collaborator_limit_exceeded':
+      'Batas kolaborator telah terlampaui. Silakan perbarui plan Anda.',
+  'subscription_storage_limit_exceeded':
+      'Batas penyimpanan telah terlampaui. Silakan perbarui plan Anda.',
+  'subscription_upgrade_required': 'Perlu Perbarui Plan',
+
+  // Subscription Overage — forceable (paid plan overage warning)
+  'subscription_storage_overage_title': 'Batas Penyimpanan Terlampaui',
+  'subscription_storage_overage_message':
+      'Saat ini menggunakan %s / %s.\nAksi ini akan meningkatkan penggunaan menjadi %s.\nBiaya tambahan mungkin berlaku. Apakah Anda ingin melanjutkan?',
+  'subscription_project_overage_title': 'Batas Proyek Terlampaui',
+  'subscription_project_overage_message':
+      'Saat ini menggunakan %s / %s proyek.\nBiaya tambahan mungkin berlaku. Apakah Anda ingin melanjutkan?',
+  'subscription_overage_continue': 'Melanjutkan',
+
+  // Subscription Blocked — not forceable (free plan limit reached)
+  'subscription_storage_blocked_title': 'Batas Penyimpanan Tercapai',
+  'subscription_storage_blocked_message':
+      'Saat ini menggunakan %s / %s.\nAnda telah mencapai batas penyimpanan dan tidak dapat mengunggah file.\nSilakan upgrade paket Anda.',
+  'subscription_project_blocked_title': 'Batas Proyek Tercapai',
+  'subscription_project_blocked_message':
+      'Saat ini menggunakan %s / %s proyek.\nAnda telah mencapai batas proyek dan tidak dapat membuat proyek baru.\nSilakan upgrade paket Anda.',
 };

@@ -144,6 +144,7 @@ mixin TriggerControlMixin {
     int result,
     String fileName,
     int page,
+    int total,
     String content,
   ) {
     logger.d(

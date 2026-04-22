@@ -251,6 +251,54 @@ class EditorAppBar extends StatelessWidget with EditorEventbus {
     bool canGoPrevious() => rxCurrentPageIndex.value > 0;
     bool canGoNext() => rxCurrentPageIndex.value < pages.length - 1;
 
+    String extractFileName(String value) {
+      if (value.isEmpty) {
+        return '';
+      }
+
+      try {
+        final uri = Uri.parse(value);
+        if (uri.pathSegments.isNotEmpty) {
+          return Uri.decodeComponent(uri.pathSegments.last);
+        }
+      } catch (_) {}
+
+      final noHash = value.split('#').first;
+      final noQuery = noHash.split('?').first;
+      return Uri.decodeComponent(noQuery.split('/').last);
+    }
+
+    final validInternalHrefs = pages
+        .map((page) => extractFileName(page.href).toLowerCase())
+        .where((href) => href.isNotEmpty)
+        .toSet();
+
+    void syncCurrentPageByUrl(String currentUrl) {
+      final currentFile = extractFileName(currentUrl);
+      if (currentFile.isEmpty) {
+        return;
+      }
+
+      final matchedIndex = pages.indexWhere(
+        (page) => extractFileName(page.href) == currentFile,
+      );
+
+      if (matchedIndex >= 0) {
+        if (matchedIndex != rxCurrentPageIndex.value) {
+          rxCurrentPageIndex.value = matchedIndex;
+        }
+
+        final matchedPage = pages[matchedIndex];
+        final matchedPageUrl = controller.documentState.getBuildTypeUrl(
+          controller.documentState.rxProjectId.value,
+          matchedPage.href,
+        );
+        if (rxCurrentPageUrl.value != matchedPageUrl) {
+          rxCurrentPageUrl.value = matchedPageUrl;
+        }
+      }
+    }
+
     void goToPrevious() {
       if (canGoPrevious()) {
         rxCurrentPageIndex.value--;
@@ -314,9 +362,20 @@ class EditorAppBar extends StatelessWidget with EditorEventbus {
               child: Obx(() => IFrameEditorWidget(
                     key: ValueKey(rxCurrentPageUrl.value),
                     url: rxCurrentPageUrl.value,
+                    fontUrl: AutoConfig.instance.domainType.fontUrl,
+                    validInternalHrefs: validInternalHrefs,
+                    invalidInternalLinkMessage:
+                        'preview_invalid_internal_link'.tr,
+                    onPageUrlChanged: syncCurrentPageByUrl,
                     width: controller.documentState.rxDocumentSizeWidth.value
                         .toDouble(),
                     height: contentHeight,
+                    documentWidth: controller
+                        .documentState.rxDocumentSizeWidth.value
+                        .toDouble(),
+                    documentHeight: controller
+                        .documentState.rxDocumentSizeHeight.value
+                        .toDouble(),
                   )),
             ),
           ],

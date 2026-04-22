@@ -123,27 +123,26 @@ class OfficeController extends GetxController {
   // 1. 변환 결과를 받아서 _convertedPages에 추가
   // 2. 모든 변환이 완료되면 createProject 호출
   // 3. 변환 도중 에러가 발생하면 종료(페이지 생성 안함)
-  void onConvert(
+   void onConvert(
     BuildContext context,
     int result,
     String fileName,
     int page,
+    int total,
     String content,
   ) {
     logger.d(
-        '[OfficeController] onConvert: result($result), fileName($fileName), page($page), content length(${content.length})');
-
-    if (!EasyLoading.isShow) {
-      EasyLoading.show(status: 'document_importing'.tr);
-    }
+        '[OfficeController] onConvert: result($result), fileName($fileName), page($page), total($total), content length(${content.length})');
 
     // 변환 중 오류 발생
     if (result == -3) {
+      // 미지원
       logger.d('[OfficeController] 미지원');
       _stopCompletion(context,
           errorCode: result, errorMessage: 'document_unsupported'.tr);
       return;
     } else if (result <= 0) {
+      // 엔진 에러
       logger.d('[OfficeController] 변환 에러');
       _stopCompletion(context, errorCode: result);
       return;
@@ -151,6 +150,7 @@ class OfficeController extends GetxController {
 
     // 변환 완료, 문서 생성
     if (result == 1) {
+      EasyLoading.show(status: 'document_creating'.tr);
       _createProject(context);
       return;
     }
@@ -162,7 +162,16 @@ class OfficeController extends GetxController {
       'page': page,
       'content': content,
     });
+    if (total > 1) {
+      EasyLoading.showProgress(
+        _convertedPages.length / total,
+        status: '${'document_converting'.tr} ${_convertedPages.length}/$total',
+      );
+    } else {
+      EasyLoading.show(status: 'document_converting'.tr);
+    }
   }
+
 
   Future<void> _createProject(BuildContext context) async {
     if (isEpubFile) {

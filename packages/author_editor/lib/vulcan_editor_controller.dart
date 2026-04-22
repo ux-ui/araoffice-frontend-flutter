@@ -118,6 +118,8 @@ class VulcanEditorController extends GetxController
   final rxShowOutline = true.obs;
   final rxGridSnap = true.obs;
   final rxZoomValue = 1.0.obs;
+  final rxViewportWidth = 0.0.obs;
+  final rxViewportHeight = 0.0.obs;
   final rxPopupInteracting = false.obs;
   // final isEditorBlocked = false.obs;
 
@@ -127,6 +129,30 @@ class VulcanEditorController extends GetxController
   final TextEditingController linkController = TextEditingController();
   final rxCanUndo = false.obs;
   final rxCanRedo = false.obs;
+
+  // Ctrl+Wheel 줌: 부모 document 리스너 참조 (dispose 시 제거용)
+  JSFunction? _parentWheelListener;
+  // rAF throttle 플래그
+  bool _zoomThrottlePending = false;
+
+  // 줌 범위 상수
+  static const double _minZoom = 0.25;
+  static const double _maxZoom = 5.0;
+  static const double _zoomStep = 0.1;
+
+  // 방향키 페이지 이동: 부모 document 리스너 참조 (dispose 시 제거용)
+  JSFunction? _parentKeydownListener;
+
+  // 마우스 스크롤 페이지 이동: 부모 document 리스너 참조 (dispose 시 제거용)
+  JSFunction? _parentWheelPageNavListener;
+  // 스크롤 끝 도달 후 누적된 오버스크롤량 (방향 포함: 양수=아래/오른쪽, 음수=위/왼쪽)
+  double _wheelOverscrollDelta = 0.0;
+  // 페이지 전환 직후 연속 발화 방지 플래그
+  bool _wheelPageNavCooldown = false;
+  // 오버스크롤 페이지 전환 임계값 (px)
+  static const double _wheelPageNavThreshold = 150.0;
+  // 페이지 전환 후 쿨다운 시간 (ms)
+  static const int _wheelPageNavCooldownMs = 800;
 
   late VulcanEditorData vulcanEditorData;
 
@@ -211,6 +237,14 @@ class VulcanEditorController extends GetxController
   void onClose() {
     logger.d('[VulcanEditorController] onClose');
     // 불필요한 리소스 해제
+
+// Ctrl+Wheel 줌 리스너 정리
+    _removeParentWheelListener();
+    // 방향키 페이지 이동 리스너 정리
+    _removeParentKeydownListener();
+    // 마우스 스크롤 페이지 이동 리스너 정리
+    _removeParentWheelPageNavListener();
+
     disposeFocusNodes();
     super.onClose();
     stopCoOpCount();
@@ -425,7 +459,6 @@ class VulcanEditorController extends GetxController
     }
 
     try {
-
       final result = await apiService.getUserList(projectId);
       final userList = result?.users
               ?.map((user) => VulcanUserData.fromJson(user.toJson()))
@@ -1152,6 +1185,16 @@ class VulcanEditorController extends GetxController
     rxAttribute.value = const PageSettingsPanel();
 
     checkEnabledEditor();
+    // Ctrl+Wheel 줌 리스너 등록 (페이지 로드 시마다 editingDoc이 교체되므로 재등록)
+    _registerParentWheelListener();
+    _registerEditingDocWheelListener();
+
+    // 방향키 페이지 이동 리스너 등록 (editingDoc 교체에 대응하여 재등록)
+    _registerParentKeydownListener();
+    _registerEditingDocKeydownListener();
+    // 마우스 스크롤 페이지 이동 리스너 등록
+    _registerParentWheelPageNavListener();
+    _registerEditingDocWheelPageNavListener();
 
     if (pageLoadCompleter != null) {
       logger.d(
@@ -1303,22 +1346,28 @@ class VulcanEditorController extends GetxController
 
     // 페이지 변경 작업이 이루어지기 전에 타이머를 종료 시키고 저장 동작을 한 후에 변경 동작 시작
     if (documentState.rxPageCurrent.value?.idref != null) {
-      if (documentState.rxPageCurrent.value?.idref != pageData.idref) {
-        EasyLoading.show();
-        if (timerManager.isTimerRunning) {
-          timerManager.cancelTimer();
+        if (documentState.rxPageCurrent.value?.idref != pageData.idref) {
+          var isShow = false;
+          if (!EasyLoading.isShow) {
+            isShow = true;
+            EasyLoading.show();
+          }
+          if (timerManager.isTimerRunning) {
+            timerManager.cancelTimer();
+          }
+          if (isDocumentChanged) {
+            isDocumentChanged = false;
+            String? html = editor?.getHtmlString() ?? '';
+            logger.d('[VulcanEditorController] triggerUpdatePageContent start');
+            await triggerUpdatePageContent(html, '');
+            logger.d('[VulcanEditorController] triggerUpdatePageContent end');
+          }
+          if (isShow) {
+            isShow = false;
+            EasyLoading.dismiss();
+          }
         }
-        if (isDocumentChanged) {
-          isDocumentChanged = false;
-          String? html = editor?.getHtmlString() ?? '';
-          logger.d('[VulcanEditorController] triggerUpdatePageContent start');
-          await triggerUpdatePageContent(html, '');
-          logger.d('[VulcanEditorController] triggerUpdatePageContent end');
-        }
-        EasyLoading.dismiss();
       }
-    }
-
     // 변경 전 페이지 확인
     if (documentState.rxPageCurrent.value?.idref != pageData.idref) {
       if (rxEditingUserId.value == documentState.rxUserId.value) {
@@ -1551,9 +1600,308 @@ class VulcanEditorController extends GetxController
     uploadFileTrigger.value = formData;
   }
 
+  /// 방향키 페이지 이동 리스너 정리
+  void _removeParentKeydownListener() {
+    if (_parentKeydownListener != null) {
+      web.document.removeEventListener('keydown', _parentKeydownListener!,
+          web.AddEventListenerOptions(capture: true));
+      _parentKeydownListener = null;
+    }
+  }
+
+  // ===== 방향키 페이지 이동 =====
+
+  /// 부모 document에 keydown 리스너 등록 (capture phase)
+  /// 에디터 컨테이너 내부 이벤트만 처리하도록 타겟 확인
+  void _registerParentKeydownListener() {
+    if (_parentKeydownListener != null) return; // 중복 등록 방지
+
+    _parentKeydownListener = ((web.KeyboardEvent e) {
+      final editorContainer = web.document.getElementById('editor-container');
+      if (editorContainer == null) return;
+      final target = e.target as web.Node?;
+      if (target == null || !editorContainer.contains(target)) return;
+      _handleArrowKeyPageNavigation(e);
+    }).toJS;
+
+    web.document.addEventListener('keydown', _parentKeydownListener!,
+        web.AddEventListenerOptions(capture: true));
+  }
+
+  /// editingDoc에 keydown 리스너 등록 (매 페이지 로드 시 호출)
+  /// iframe 내부는 별도 document이므로 부모 capture로 잡히지 않아 별도 등록 필요
+  void _registerEditingDocKeydownListener() {
+    final editingDoc =
+        web.window.getProperty('editingDoc'.toJS) as web.Document?;
+    if (editingDoc == null) return;
+
+    final listener = ((web.KeyboardEvent e) {
+      _handleArrowKeyPageNavigation(e);
+    }).toJS;
+
+    editingDoc.addEventListener(
+        'keydown', listener, web.AddEventListenerOptions(capture: true));
+  }
+
+  /// 방향키 입력 시 페이지 이동 여부를 판단하는 핸들러
+  /// 활성화된 이동 핸들이 없고, 에디터 스크롤이 끝에 도달한 경우에만 페이지 전환
+  void _handleArrowKeyPageNavigation(web.KeyboardEvent e) {
+    if (editor == null) return;
+
+    // 수정자 키 조합은 무시 (다른 단축키와 충돌 방지)
+    if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+
+    // 활성화된 이동 핸들이 없는 경우(아무것도 선택되지 않은 상태)에만 동작
+    final selType = editor!.selectedType();
+    if (selType != 'none') return;
+
+    final key = e.key;
+    final isUp = key == 'ArrowUp';
+    final isDown = key == 'ArrowDown';
+    final isLeft = key == 'ArrowLeft';
+    final isRight = key == 'ArrowRight';
+    if (!isUp && !isDown && !isLeft && !isRight) return;
+
+    // 캔버스가 화면을 넘어 스크롤이 가능하면 스크롤 우선
+    final goBackward = isUp || isLeft;
+    final horizontal = isLeft || isRight;
+    if (_canEditorScroll(goBackward ? -1 : 1, horizontal)) return;
+
+    // 스크롤 끝에 도달한 경우 페이지 이동
+    e.preventDefault();
+    if (goBackward) {
+      _goToPreviousPage();
+    } else {
+      _goToNextPage();
+    }
+  }
+
+  /// 에디터가 지정된 방향으로 스크롤 가능한지 확인
+  /// [direction] -1: 위/왼쪽, 1: 아래/오른쪽
+  /// [horizontal] true: 좌우, false: 상하
+  bool _canEditorScroll(int direction, bool horizontal) {
+    // 실제 스크롤 컨테이너: editorParent > div[tabindex="0"] (overflow: auto)
+    final scrollContainer =
+        web.document.querySelector('#editorParent > div[tabindex="0"]');
+    if (scrollContainer != null &&
+        _hasScrollRoom(scrollContainer, direction, horizontal)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// 엘리먼트가 지정된 방향으로 스크롤 여유가 있는지 확인
+  bool _hasScrollRoom(web.Element el, int direction, bool horizontal) {
+    if (horizontal) {
+      if (el.scrollWidth <= el.clientWidth) return false;
+      return direction < 0
+          ? el.scrollLeft > 0
+          : el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+    } else {
+      if (el.scrollHeight <= el.clientHeight) return false;
+      return direction < 0
+          ? el.scrollTop > 0
+          : el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+    }
+  }
+
+  void _goToPreviousPage() {
+    final pages = documentState.rxPages;
+    final currentPage = documentState.rxPageCurrent.value;
+    if (currentPage == null || pages.isEmpty) return;
+
+    final currentIndex = pages.indexWhere((p) => p.id == currentPage.id);
+    if (currentIndex > 0) {
+      changePageTreeList(pages[currentIndex - 1]);
+    }
+  }
+
+  void _goToNextPage() {
+    final pages = documentState.rxPages;
+    final currentPage = documentState.rxPageCurrent.value;
+    if (currentPage == null || pages.isEmpty) return;
+
+    final currentIndex = pages.indexWhere((p) => p.id == currentPage.id);
+    if (currentIndex >= 0 && currentIndex < pages.length - 1) {
+      changePageTreeList(pages[currentIndex + 1]);
+    }
+  }
+
+  // ===== 마우스 스크롤 페이지 이동 =====
+
+  /// 부모 document에 wheel 리스너 등록 (capture phase)
+  /// 기존 Ctrl+Wheel 줌 리스너와 별도로, 일반 스크롤 시 페이지 전환 처리
+  void _registerParentWheelPageNavListener() {
+    if (_parentWheelPageNavListener != null) return; // 중복 등록 방지
+
+    _parentWheelPageNavListener = ((web.WheelEvent e) {
+      final editorContainer = web.document.getElementById('editor-container');
+      if (editorContainer == null) return;
+      final target = e.target as web.Node?;
+      if (target == null || !editorContainer.contains(target)) return;
+      _handleWheelPageNavigation(e);
+    }).toJS;
+
+    web.document.addEventListener('wheel', _parentWheelPageNavListener!,
+        web.AddEventListenerOptions(capture: true, passive: false));
+  }
+
+  /// editingDoc에 wheel 리스너 등록 (매 페이지 로드 시 호출)
+  void _registerEditingDocWheelPageNavListener() {
+    final editingDoc =
+        web.window.getProperty('editingDoc'.toJS) as web.Document?;
+    if (editingDoc == null) return;
+
+    final listener = ((web.WheelEvent e) {
+      _handleWheelPageNavigation(e);
+    }).toJS;
+
+    editingDoc.addEventListener('wheel', listener,
+        web.AddEventListenerOptions(capture: true, passive: false));
+  }
+
+  /// 마우스 스크롤 시 페이지 이동 여부를 판단하는 핸들러
+  /// 스크롤이 끝에 도달한 상태에서 오버스크롤이 임계값을 넘으면 페이지 전환
+  void _handleWheelPageNavigation(web.WheelEvent e) {
+    if (editor == null || _wheelPageNavCooldown) return;
+
+    // Ctrl+Wheel은 줌 리스너가 처리하므로 제외, 기타 수정자 키도 무시
+    if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+
+    // 활성화된 이동 핸들이 없는 경우에만 동작
+    final selType = editor!.selectedType();
+    if (selType != 'none') return;
+
+    // 주 스크롤 방향 결정 (수직 우선, 수평 전용 스크롤도 지원)
+    final horizontal = e.deltaY == 0 && e.deltaX != 0;
+    final rawDelta = horizontal ? e.deltaX : e.deltaY;
+    if (rawDelta == 0) return;
+
+    // deltaMode에 따른 보정 (LINE/PAGE → PIXEL 환산)
+    final double delta;
+    switch (e.deltaMode) {
+      case 1: // DOM_DELTA_LINE
+        delta = rawDelta * 40;
+        break;
+      case 2: // DOM_DELTA_PAGE
+        delta = rawDelta * 800;
+        break;
+      default: // DOM_DELTA_PIXEL
+        delta = rawDelta;
+    }
+
+    final direction = delta > 0 ? 1 : -1;
+
+    // 캔버스에 스크롤 여유가 있으면 기본 스크롤 우선
+    if (_canEditorScroll(direction, horizontal)) {
+      _wheelOverscrollDelta = 0.0;
+      return;
+    }
+
+    // 스크롤 끝 도달 — 브라우저 기본 오버스크롤(바운스) 방지
+    e.preventDefault();
+
+    // 방향 전환 시 누적량 리셋
+    if (_wheelOverscrollDelta != 0 &&
+        (_wheelOverscrollDelta > 0) != (delta > 0)) {
+      _wheelOverscrollDelta = 0.0;
+    }
+
+    _wheelOverscrollDelta += delta;
+
+    // 임계값 도달 시 페이지 전환
+    if (_wheelOverscrollDelta.abs() >= _wheelPageNavThreshold) {
+      _wheelOverscrollDelta = 0.0;
+      _wheelPageNavCooldown = true;
+
+      if (direction < 0) {
+        _goToPreviousPage();
+      } else {
+        _goToNextPage();
+      }
+
+      // 쿨다운: 연속 스크롤 이벤트에 의한 다중 전환 방지
+      Future.delayed(const Duration(milliseconds: _wheelPageNavCooldownMs), () {
+        _wheelPageNavCooldown = false;
+      });
+    }
+  }
+
+  /// 마우스 스크롤 페이지 이동 리스너 정리
+  void _removeParentWheelPageNavListener() {
+    if (_parentWheelPageNavListener != null) {
+      web.document.removeEventListener('wheel', _parentWheelPageNavListener!,
+          web.AddEventListenerOptions(capture: true));
+      _parentWheelPageNavListener = null;
+    }
+    _wheelOverscrollDelta = 0.0;
+    _wheelPageNavCooldown = false;
+  }
+
   void scale(double factor) {
     editor?.scale(factor);
     rxZoomValue.value = factor;
+  }
+
+  /// Ctrl+Wheel 이벤트를 rAF throttle 후 줌 적용
+  void _handleCtrlWheelZoom(double deltaY) {
+    if (_zoomThrottlePending) return;
+    _zoomThrottlePending = true;
+
+    web.window.requestAnimationFrame(((JSAny _) {
+      _zoomThrottlePending = false;
+      final direction = deltaY > 0 ? -1 : 1; // 스크롤 다운 → 축소, 업 → 확대
+      final newZoom =
+          (rxZoomValue.value + direction * _zoomStep).clamp(_minZoom, _maxZoom);
+      scale(newZoom);
+    }).toJS);
+  }
+
+  /// 부모 document에 Ctrl+Wheel 리스너 등록 (capture phase로 최우선 처리)
+  /// 에디터 컨테이너 내부 이벤트만 처리하도록 타겟 확인
+  void _registerParentWheelListener() {
+    if (_parentWheelListener != null) return; // 중복 등록 방지
+
+    _parentWheelListener = ((web.WheelEvent e) {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      // 에디터 컨테이너 내부 이벤트만 줌 적용
+      final editorContainer = web.document.getElementById('editor-container');
+      if (editorContainer == null) return;
+      final target = e.target as web.Node?;
+      if (target == null || !editorContainer.contains(target)) return;
+      _handleCtrlWheelZoom(e.deltaY);
+    }).toJS;
+
+    web.document.addEventListener('wheel', _parentWheelListener!,
+        web.AddEventListenerOptions(capture: true, passive: false));
+  }
+
+  /// editingFrame 내부 document에 Ctrl+Wheel 리스너 주입 (매 페이지 로드 시 호출)
+  /// iframe 내부는 별도 document이므로 부모 capture로 잡히지 않아 별도 등록 필요
+  void _registerEditingDocWheelListener() {
+    final editingDoc =
+        web.window.getProperty('editingDoc'.toJS) as web.Document?;
+    if (editingDoc == null) return;
+
+    final listener = ((web.WheelEvent e) {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      _handleCtrlWheelZoom(e.deltaY);
+    }).toJS;
+
+    editingDoc.addEventListener('wheel', listener,
+        web.AddEventListenerOptions(capture: true, passive: false));
+  }
+
+  /// Ctrl+Wheel 줌 리스너 정리
+  void _removeParentWheelListener() {
+    if (_parentWheelListener != null) {
+      web.document.removeEventListener('wheel', _parentWheelListener!,
+          web.AddEventListenerOptions(capture: true));
+      _parentWheelListener = null;
+    }
   }
 
   //_______popup menu__________
@@ -1736,8 +2084,65 @@ class VulcanEditorController extends GetxController
 
   // ________ 링크 ________________
   void applyLink(String link) {
-    linkController.text = link;
-    editor?.applyLink(link);
+    final normalizedLink = _normalizeExternalLink(link);
+    linkController.text = normalizedLink;
+    editor?.applyLink(normalizedLink);
+  }
+
+  /// 프로젝트 페이지 목록에서 선택한 내부 링크 (예: `ch1.xhtml`). 정규화 없이 그대로 적용해 오동작을 줄임.
+  void applyInternalPageLink(String href) {
+    final trimmed = href.trim();
+    if (trimmed.isEmpty) return;
+    linkController.text = trimmed;
+    editor?.applyLink(trimmed);
+  }
+
+  String _normalizeExternalLink(String link) {
+    final trimmed = link.trim();
+    if (trimmed.isEmpty) {
+      return trimmed;
+    }
+
+    final lower = trimmed.toLowerCase();
+    const passthroughPrefixes = [
+      'http://',
+      'https://',
+      'mailto:',
+      'tel:',
+      'ftp://',
+      'file:',
+      'javascript:',
+      '#',
+      '/',
+      './',
+      '../',
+    ];
+
+    if (passthroughPrefixes.any(lower.startsWith)) {
+      return trimmed;
+    }
+
+    final hasScheme =
+        RegExp(r'^[a-z][a-z0-9+.-]*:', caseSensitive: false).hasMatch(trimmed);
+    if (hasScheme) {
+      return trimmed;
+    }
+
+    final looksLikeDomain = RegExp(
+      r'^(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:[/:?#].*)?$',
+      caseSensitive: false,
+    ).hasMatch(trimmed);
+
+    final looksLikeLocalPage = RegExp(
+      r'^[^/]+\.(?:xhtml|html?)$',
+      caseSensitive: false,
+    ).hasMatch(trimmed);
+
+    if (looksLikeDomain && !looksLikeLocalPage) {
+      return 'https://$trimmed';
+    }
+
+    return trimmed;
   }
 
   void removeLink() {

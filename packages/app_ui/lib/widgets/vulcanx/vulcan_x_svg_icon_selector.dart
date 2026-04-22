@@ -8,6 +8,7 @@ class VulcanXSvgIconSelector extends VulcanXStatefulWidget {
   final Function(int) onSelected;
   final int initialSelectedIndex;
   final double iconSize;
+  final List<String>? tooltips;
 
   const VulcanXSvgIconSelector({
     super.key,
@@ -15,6 +16,7 @@ class VulcanXSvgIconSelector extends VulcanXStatefulWidget {
     required this.onSelected,
     this.initialSelectedIndex = 0,
     this.iconSize = 24.0,
+    this.tooltips,
   });
 
   @override
@@ -46,6 +48,9 @@ class _VulcanXSvgIconSelectorState
       children: List.generate(
         widget.svgIcons.length,
         (index) => IconButton(
+          tooltip: widget.tooltips != null && index < widget.tooltips!.length
+              ? widget.tooltips![index]
+              : null,
           icon: widget.svgIcons[index].svg(
             colorFilter: ColorFilter.mode(
               _selectedIndex == index

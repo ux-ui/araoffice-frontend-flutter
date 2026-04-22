@@ -93,7 +93,6 @@ class VulcanEditor extends StatefulWidget {
     this.initialFolderId,
     this.isDownload = false,
     this.tenantSetting,
-
     this.onCreatedProject,
     this.onCreatePage,
     this.onDeletePage,
@@ -112,7 +111,6 @@ class VulcanEditor extends StatefulWidget {
     this.onExportTxt,
     this.onExportXhtml,
     this.onCloudConnection,
-
     this.onUploadEpub,
     this.onUploadXhtml,
     this.onUploadTxt,
@@ -778,6 +776,13 @@ class _VulcanEditorState extends State<VulcanEditor> {
                           Expanded(
                             child: LayoutBuilder(
                               builder: (context, editorConstraints) {
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
+                                  controller.rxViewportWidth.value =
+                                      editorConstraints.maxWidth;
+                                  controller.rxViewportHeight.value =
+                                      editorConstraints.maxHeight;
+                                });
                                 return Stack(
                                   children: [
                                     Obx(

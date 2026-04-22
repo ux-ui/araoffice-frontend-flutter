@@ -62,7 +62,8 @@ class EditorPage extends GetView<EditorController> {
                   onCreatedProject: (projectData) =>
                       controller.createProject(context, projectData),
                   onCreatePage: (value) => controller.createPage(value),
-                  onDeletePage: (value) => controller.deletePage(value),
+                  onDeletePage: (value) =>
+                      controller.deletePage(value, context),
                   onCopyPage: (value) => controller.copyPage(value),
                   onMovePage: (value) => controller.movePage(value),
                   onRenamePage: (value) => controller.renamePage(value),

@@ -13,10 +13,48 @@ import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../home/view/home_page.dart';
 import '../../login/view/login_controller.dart';
+
+
+class _InternalLinkReferenceDetail {
+  final String pageId;
+  final String title;
+  final String href;
+  final int count;
+
+  const _InternalLinkReferenceDetail({
+    required this.pageId,
+    required this.title,
+    required this.href,
+    required this.count,
+  });
+}
+
+class _InternalLinkReferenceReport {
+  final int totalCount;
+  final List<_InternalLinkReferenceDetail> details;
+
+  const _InternalLinkReferenceReport({
+    required this.totalCount,
+    required this.details,
+  });
+}
+
+class _DeleteBrokenLinksAction {
+  final bool shouldDelete;
+  final bool removeLinksFirst;
+  final Set<String> selectedPageIds;
+
+  const _DeleteBrokenLinksAction({
+    required this.shouldDelete,
+    required this.removeLinksFirst,
+    this.selectedPageIds = const <String>{},
+  });
+}
 
 class EditorController extends GetxController with CloudConnectionMixin {
   final apiService = Get.find<ProjectApiService>();
@@ -433,9 +471,63 @@ class EditorController extends GetxController with CloudConnectionMixin {
     update();
   }
 
-  Future<void> deletePage(Map<String, String> page) async {
+  Future<void> deletePage(
+      Map<String, String> page, BuildContext context) async {
     String projectId = page['projectId'] ?? '';
     String pageId = page['pageId'] ?? '';
+    // 삭제 전 하이퍼링크 참조 검증 + 확인 다이얼로그 플로우는
+    // 현재 운영 정책에 따라 사용하지 않아 주석 처리합니다.
+    //
+    // final pages =
+    //     List<TreeListModel>.from(rxVulcanEditorData.value.pages ?? const []);
+    // TreeListModel? currentPage;
+    // for (final p in pages) {
+    //   if (p.id == pageId) {
+    //     currentPage = p;
+    //     break;
+    //   }
+    // }
+    //
+    // String targetHref =
+    //     (page['href'] ?? page['fileName'] ?? currentPage?.href ?? '').trim();
+    // String title = (page['title'] ?? currentPage?.title ?? '').trim();
+    //
+    // final linkReferenceReport = await _countInternalLinkReferences(
+    //   projectId: projectId,
+    //   targetHref: targetHref,
+    //   deletingPageId: pageId,
+    //   pages: pages,
+    // );
+    //
+    // if (!context.mounted) {
+    //   return;
+    // }
+    //
+    // if (linkReferenceReport.totalCount > 0) {
+    //   final action = await _showDeleteWithBrokenLinksDialog(
+    //     context: context,
+    //     title: title,
+    //     report: linkReferenceReport,
+    //   );
+    //   if (action == null || !action.shouldDelete) {
+    //     return;
+    //   }
+    //
+    //   if (action.removeLinksFirst) {
+    //     final removedCount = await _removeInternalLinksToTargetPage(
+    //       projectId: projectId,
+    //       targetHref: targetHref,
+    //       pages: pages,
+    //       selectedPageIds: action.selectedPageIds,
+    //     );
+    //     if (removedCount > 0) {
+    //       EasyLoading.showSuccess(
+    //         'page_delete_removed_links_result'
+    //             .trArgs([removedCount.toString()]),
+    //       );
+    //     }
+    //   }
+    // }
 
     final result =
         await apiService.deletePage(projectId: projectId, pageId: pageId);
@@ -456,6 +548,357 @@ class EditorController extends GetxController with CloudConnectionMixin {
     );
     update();
   }
+
+
+  Future<_DeleteBrokenLinksAction?> _showDeleteWithBrokenLinksDialog({
+    required BuildContext context,
+    required String title,
+    required _InternalLinkReferenceReport report,
+  }) async {
+    final translatedTitle = processTranslation(title).trim();
+    final pageTitle = translatedTitle.isEmpty ? '-' : translatedTitle;
+    final selectedPageIds = report.details.map((d) => d.pageId).toSet();
+    final result = await showDialog<_DeleteBrokenLinksAction>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PointerInterceptor(
+        child: StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text('page_delete'.tr),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520, maxHeight: 420),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'page_delete_with_broken_links_confirm_message'
+                          .trArgs([pageTitle, report.totalCount.toString()]),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'page_delete_broken_links_detail_title'.tr,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    ...report.details.map(
+                      (detail) => CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        value: selectedPageIds.contains(detail.pageId),
+                        onChanged: (checked) {
+                          setState(() {
+                            if (checked == true) {
+                              selectedPageIds.add(detail.pageId);
+                            } else {
+                              selectedPageIds.remove(detail.pageId);
+                            }
+                          });
+                        },
+                        title: Text(
+                          '${detail.title} (${detail.href})',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                            '${'remove_link'.tr}: ${detail.count}${'count'.tr}'),
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(
+                  context,
+                  const _DeleteBrokenLinksAction(
+                    shouldDelete: false,
+                    removeLinksFirst: false,
+                  ),
+                ),
+                child: Text('cancel'.tr),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                onPressed: () => Navigator.pop(
+                  context,
+                  const _DeleteBrokenLinksAction(
+                    shouldDelete: true,
+                    removeLinksFirst: false,
+                  ),
+                ),
+                child: Text('delete'.tr),
+              ),
+              FilledButton(
+                onPressed: selectedPageIds.isEmpty
+                    ? null
+                    : () => Navigator.pop(
+                          context,
+                          _DeleteBrokenLinksAction(
+                            shouldDelete: true,
+                            removeLinksFirst: true,
+                            selectedPageIds: selectedPageIds.toSet(),
+                          ),
+                        ),
+                child: Text('remove_links_and_delete'.tr),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return result;
+  }
+
+  Future<_InternalLinkReferenceReport> _countInternalLinkReferences({
+    required String projectId,
+    required String targetHref,
+    required String deletingPageId,
+    required List<TreeListModel> pages,
+  }) async {
+    final normalizedTarget = _normalizeInternalHref(targetHref);
+    if (normalizedTarget == null || pages.isEmpty) {
+      return const _InternalLinkReferenceReport(totalCount: 0, details: []);
+    }
+
+    final dioClient = dio.Dio(
+      dio.BaseOptions(
+        responseType: dio.ResponseType.plain,
+        sendTimeout: const Duration(seconds: 5),
+        connectTimeout: const Duration(seconds: 5),
+        receiveTimeout: const Duration(seconds: 8),
+      ),
+    );
+
+    int totalCount = 0;
+    final pageReferenceCount = <String, int>{};
+    final pageMap = <String, TreeListModel>{};
+    for (final page in pages) {
+      pageMap[page.id] = page;
+    }
+
+    for (final page in pages) {
+      if (page.id == deletingPageId) {
+        continue;
+      }
+
+      final pageUrl = _buildProjectPageUrl(projectId, page.href);
+      if (pageUrl.isEmpty) {
+        continue;
+      }
+
+      try {
+        final response = await dioClient.get<String>(pageUrl);
+        final content = response.data ?? '';
+        if (content.isEmpty) {
+          continue;
+        }
+
+        int pageCount = 0;
+        for (final href in _extractHrefAttributes(content)) {
+          final normalized = _normalizeInternalHref(href);
+          if (normalized == normalizedTarget) {
+            totalCount++;
+            pageCount++;
+          }
+        }
+        if (pageCount > 0) {
+          pageReferenceCount[page.id] = pageCount;
+        }
+      } catch (e) {
+        debugPrint('deletePage link scan failed for ${page.href}: $e');
+      }
+    }
+
+    final details = <_InternalLinkReferenceDetail>[];
+    for (final page in pages) {
+      final count = pageReferenceCount[page.id];
+      if (count == null || count <= 0) {
+        continue;
+      }
+      final pageInfo = pageMap[page.id];
+      final translated = processTranslation(pageInfo?.title ?? '').trim();
+      final title = translated.isEmpty ? (pageInfo?.href ?? '-') : translated;
+      details.add(
+        _InternalLinkReferenceDetail(
+          pageId: page.id,
+          title: title,
+          href: pageInfo?.href ?? '',
+          count: count,
+        ),
+      );
+    }
+
+    return _InternalLinkReferenceReport(
+      totalCount: totalCount,
+      details: details,
+    );
+  }
+
+  String _buildProjectPageUrl(String projectId, String fileName) {
+    final baseUrl = ApiDio.apiHostAppServer;
+    if (baseUrl.isEmpty || projectId.isEmpty || fileName.trim().isEmpty) {
+      return '';
+    }
+    return '${baseUrl}user/project/$projectId/${fileName.trim()}';
+  }
+
+  Iterable<String> _extractHrefAttributes(String content) sync* {
+    final hrefPattern = RegExp(
+      r'''href\s*=\s*(['"])(.*?)\1''',
+      caseSensitive: false,
+      dotAll: true,
+    );
+
+    for (final match in hrefPattern.allMatches(content)) {
+      final href = match.group(2);
+      if (href != null && href.trim().isNotEmpty) {
+        yield href.trim();
+      }
+    }
+  }
+
+  Future<int> _removeInternalLinksToTargetPage({
+    required String projectId,
+    required String targetHref,
+    required List<TreeListModel> pages,
+    required Set<String> selectedPageIds,
+  }) async {
+    final normalizedTarget = _normalizeInternalHref(targetHref);
+    if (normalizedTarget == null || selectedPageIds.isEmpty) {
+      return 0;
+    }
+
+    final dioClient = dio.Dio(
+      dio.BaseOptions(
+        responseType: dio.ResponseType.plain,
+        sendTimeout: const Duration(seconds: 5),
+        connectTimeout: const Duration(seconds: 5),
+        receiveTimeout: const Duration(seconds: 8),
+      ),
+    );
+
+    int removedCount = 0;
+
+    for (final page in pages) {
+      if (!selectedPageIds.contains(page.id)) {
+        continue;
+      }
+
+      final pageUrl = _buildProjectPageUrl(projectId, page.href);
+      if (pageUrl.isEmpty) {
+        continue;
+      }
+
+      try {
+        final response = await dioClient.get<String>(pageUrl);
+        final originalContent = response.data ?? '';
+        if (originalContent.isEmpty) {
+          continue;
+        }
+
+        int removedInPage = 0;
+        final updatedContent = _removeTargetAnchorsFromContent(
+          content: originalContent,
+          normalizedTarget: normalizedTarget,
+          onRemoved: () => removedInPage++,
+        );
+
+        if (removedInPage <= 0 || updatedContent == originalContent) {
+          continue;
+        }
+
+        final saveResult = await apiService.updatePageContent(
+          projectId: projectId,
+          pageId: page.id,
+          fileName: page.href,
+          content: updatedContent,
+        );
+
+        if (saveResult == null || saveResult.isError) {
+          logger.d(
+              '링크 제거 후 저장 실패 - pageId=${page.id}, status=${saveResult?.statusCode}, message=${saveResult?.message}');
+          continue;
+        }
+
+        removedCount += removedInPage;
+      } catch (e) {
+        debugPrint('remove internal links failed for ${page.href}: $e');
+      }
+    }
+
+    return removedCount;
+  }
+
+  String _removeTargetAnchorsFromContent({
+    required String content,
+    required String normalizedTarget,
+    required void Function() onRemoved,
+  }) {
+    final anchorPattern = RegExp(
+      r'''<a\b([^>]*?)href\s*=\s*(['"])(.*?)\2([^>]*)>([\s\S]*?)<\/a>''',
+      caseSensitive: false,
+      dotAll: true,
+    );
+
+    return content.replaceAllMapped(anchorPattern, (match) {
+      final rawHref = match.group(3) ?? '';
+      final normalized = _normalizeInternalHref(rawHref);
+      if (normalized != normalizedTarget) {
+        return match.group(0) ?? '';
+      }
+
+      onRemoved();
+      return match.group(5) ?? '';
+    });
+  }
+
+  String? _normalizeInternalHref(String href) {
+    final trimmed = href.trim();
+    if (trimmed.isEmpty || trimmed.startsWith('#')) {
+      return null;
+    }
+
+    final lower = trimmed.toLowerCase();
+    if (lower.startsWith('mailto:') ||
+        lower.startsWith('tel:') ||
+        lower.startsWith('javascript:') ||
+        lower.startsWith('data:')) {
+      return null;
+    }
+
+    final hasScheme =
+        RegExp(r'^[a-z][a-z0-9+.-]*:', caseSensitive: false).hasMatch(trimmed);
+    if (hasScheme) {
+      return null;
+    }
+
+    try {
+      final uri = Uri.parse(trimmed);
+      final path = uri.path;
+      final fileName = Uri.decodeComponent(path.split('/').last).toLowerCase();
+      if (RegExp(r'^[^/]+\.(xhtml|html?)$', caseSensitive: false)
+          .hasMatch(fileName)) {
+        return fileName;
+      }
+      return null;
+    } catch (_) {
+      final noHash = trimmed.split('#').first;
+      final noQuery = noHash.split('?').first;
+      final fileName =
+          Uri.decodeComponent(noQuery.split('/').last).toLowerCase().trim();
+      if (RegExp(r'^[^/]+\.(xhtml|html?)$', caseSensitive: false)
+          .hasMatch(fileName)) {
+        return fileName;
+      }
+      return null;
+    }
+  }
+
 
   Future<void> copyPage(Map<String, String> page) async {
     String projectId = page['projectId'] ?? '';

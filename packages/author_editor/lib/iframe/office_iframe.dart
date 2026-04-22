@@ -11,12 +11,14 @@ import 'iframe_mixin.dart';
 
 @JS()
 extension type WindowCallBack(JSObject _) implements JSObject {
-  external void loadFromUrl(bool readOnly, String fileUrl);
-  external void loadFromMemory(
-      bool readOnly, JSArrayBuffer arrayBuffer, String fileName);
-  external void openViewer(bool readOnly);
+  external void loadFromUrl(
+      bool readOnly, bool exportAll, bool showClose, String fileUrl);
+  external void loadFromMemory(bool readOnly, bool exportAll, bool showClose,
+      JSArrayBuffer arrayBuffer, String fileName);
+  external void openViewer(bool readOnly, bool exportAll, bool showClose);
   external int getCurrentPage();
   external int getTotalPages();
+  external void callExports(String pages);
 }
 
 class OfficeIframe extends StatefulWidget with IframeMixin {
@@ -31,6 +33,10 @@ class OfficeIframe extends StatefulWidget with IframeMixin {
     this.projectId,
     this.baseUrl,
     this.readOnly = false,
+    this.exportAll = false,
+    this.showClose = false,
+    this.onOpen,
+    this.onClose,
     this.onConvert,
   });
 
@@ -43,6 +49,10 @@ class OfficeIframe extends StatefulWidget with IframeMixin {
   final String? projectId;
   final String? baseUrl;
   final bool readOnly;
+  final bool exportAll;
+  final bool showClose;
+  final OnOpenCallback? onOpen;
+  final VoidCallback? onClose;
   final OnConvertCallback? onConvert;
 
   @override
@@ -91,20 +101,29 @@ class _OfficeIframeState extends State<OfficeIframe> {
               debugPrint('  - fileBytes: ${widget.fileBytes?.length ?? 0}');
               debugPrint('  - fileName: ${widget.fileName}');
 
-              if (widget.fileUrl != null) {
+              if (widget.fileUrl != null && widget.fileUrl!.isNotEmpty) {
                 jsWindowCallBack?.loadFromUrl(
                   widget.readOnly,
+                  widget.exportAll,
+                  widget.showClose,
                   widget.fileUrl ?? '',
                 );
-              } else if (widget.fileBytes != null && widget.fileName != null) {
+              } else if (widget.fileBytes != null &&
+                  (widget.fileName != null && widget.fileName!.isNotEmpty)) {
                 JSArrayBuffer jsArrayBuffer = widget.fileBytes!.buffer.toJS;
                 jsWindowCallBack?.loadFromMemory(
                   widget.readOnly,
+                  widget.exportAll,
+                  widget.showClose,
                   jsArrayBuffer,
-                  widget.fileName ?? '',
+                  widget.fileName!,
                 );
               } else {
-                jsWindowCallBack?.openViewer(widget.readOnly);
+                jsWindowCallBack?.openViewer(
+                  widget.readOnly,
+                  widget.exportAll,
+                  widget.showClose,
+                );
               }
             },
             onCallback: (data) {
@@ -123,6 +142,10 @@ class _OfficeIframeState extends State<OfficeIframe> {
     return jsWindowCallBack?.getTotalPages() ?? 0;
   }
 
+  void callExports(String pages) {
+    jsWindowCallBack?.callExports(pages);
+  }
+
   /// 큐에서 콜백 데이터를 처리하는 함수
   void _processQueue() {
     if (_callbackQueue.isEmpty) return;
@@ -136,24 +159,37 @@ class _OfficeIframeState extends State<OfficeIframe> {
   void _handleCallback(Map<String, dynamic> data) {
     try {
       logger.d(
-          '[OfficeIframe][파싱된 콜백 데이터] event:"${data['event']}", result:${data['result']}, file:"${data['file']}", page:${data['page']}, type:${data['type']}');
+          '[OfficeIframe][파싱된 콜백 데이터] event:"${data['event']}", result:${data['result']}, file:"${data['file']}", page:${data['page']}, total:${data['total']}, format:${data['format']}');
 
+      // onOpen 이벤트 처리
+      if (data['event'] == 'onOpen') {
+        final result = data['result'] ?? 0;
+        widget.onOpen?.call(result);
+      }
+      // onClose 이벤트 처리
+      else if (data['event'] == 'onClose') {
+        if (widget.showClose) {
+          widget.onClose?.call();
+        }
+      }
       // onExport 이벤트 처리
-      if (data['event'] == 'onExport') {
+      else if (data['event'] == 'onExport') {
         /**
-         * [result]: 1: 종료, 2: 페이지 내보내기 중, -3: 미지원
-         * [type]: 1: xhtml,
+         * [result]: 1: 종료, 2: 내보내기 중, -3: 미지원
+         * [format]: 2: xhtml,
          */
-        if (data['result'] == 2) {
+        final result = data['result'] ?? 0;
+        if (result == 2) {
           final int page = data['page'] ?? 0;
-          // final int type = data['type'] ?? 0;
+          final int total = data['total'] ?? 0;
+          // final int format = data['format'] ?? 0;
           final String text = widget.safeStringConvert(data['text']) ?? '';
           final String fileName = '${widget.safeStringConvert(data['file'])}';
-          widget.onConvert?.call(2, fileName, page, text);
-        } else if (data['result'] == 1) {
-          widget.onConvert?.call(1, '', 0, '');
-        } else if (data['result'] == -3) {
-          widget.onConvert?.call(-3, '', 0, '');
+          widget.onConvert?.call(2, fileName, page, total, text);
+        } else if (result == 1) {
+          widget.onConvert?.call(1, '', 0, 0, '');
+        } else if (result <= 0) {
+          widget.onConvert?.call(result, '', 0, 0, '');
         }
       }
     } catch (e) {

@@ -1,5 +1,12 @@
+typedef OnOpenCallback = void Function(int result);
+
 typedef OnConvertCallback = void Function(
-    int result, String fileName, int page, String content);
+  int result,
+  String fileName,
+  int page,
+  int total,
+  String content,
+);
 
 mixin IframeMixin {
   /// 안전한 문자열 변환을 위한 헬퍼 함수
