@@ -8,11 +8,11 @@ const Map<String, String> enUs = {
   'input_hint_message': 'Please enter your search term',
   'hint_text_file_project_search': 'Search for files or projects',
   'resource_management': 'Resource Management',
+  'resource_delete_error': 'Failed to delete resource',
+  'resource_delete_error_message':
+      'File %s is used in %s page, so it cannot be deleted',
   'upgrade_plan': 'Upgrade Plan',
   'notify': 'Notification',
-  'share_id': 'Share ID',
-  'copy_success': 'copied successfully.',
-  'share_id_change_popup_title': 'Set Share ID for the first time',
   'created_folder_input_name_hint': 'Please enter folder name',
   'created_folder_input_message': '* Folder name must be 2-20 characters',
   'edit_project_input_message': '* Document name must be 2-20 characters',
@@ -50,9 +50,13 @@ const Map<String, String> enUs = {
   'folder_copy_title': 'Copy Folder',
   'folder_delete_title': 'Delete Folder',
   'project_delete_title': 'Delete Project',
+  'project_delete_failed': 'Failed to delete project',
   'cover_enable': 'Enable Cover',
   'toc_enable': 'Enable Table of Contents',
   'delete': 'Delete',
+  'link_off': 'Remove Link',
+  'remove_links_and_delete': 'Remove links & delete',
+  'page_delete_removed_links_result': 'Removed %s linked hyperlinks.',
   'delete_message': 'Are you sure you want to delete?',
   'no_project_message':
       'Create your own book\nMake it easily with Author Dabonda!',
@@ -73,6 +77,7 @@ const Map<String, String> enUs = {
   'file_and_project': 'Files and Projects',
   'tutorial': 'Tutorial',
   'faq': 'FAQ',
+  'platform_shortcut': 'Platform Shortcut',
   'template_market': 'Template Market',
   'templeate_market_message':
       'Use templates from various fields without copyright concerns',
@@ -169,6 +174,8 @@ const Map<String, String> enUs = {
   'letter_spacing': 'Letter Spacing',
   'reset_line_spacing_and_padding': 'Reset Line Spacing and Padding',
   'font_width': 'Font Width',
+  'font_width_unsupported':
+      'This feature is not available for the selected font',
   'multiple_steps': 'Multiple Columns',
   'short_interval': 'Column Spacing',
   'direction_paragraphs': 'Paragraph Direction',
@@ -213,6 +220,10 @@ const Map<String, String> enUs = {
   'position': 'Position',
   'paragraph': 'Paragraph',
   'layer': 'Layer',
+  'select_item_list': 'Select Item',
+  'view_column_open_tooltip': 'Open side panels',
+  'view_column_close_tooltip': 'Close side panels',
+  'selected_items': 'Selected %s items',
   'document_setting': 'Document Settings',
   'page_rename_title': 'Rename Page',
   'page_rename_title_text': 'Edit Page Title',
@@ -221,9 +232,15 @@ const Map<String, String> enUs = {
   'page_rename_message': 'Please enter new page name',
   'page_delete_confirm_message':
       'Are you sure you want to delete \'%s\' page?\nSubpages will also be deleted.',
+  'page_delete_with_broken_links_confirm_message':
+      'This page (\'%s\') is registered as a hyperlink in %s places.\nIf you delete it, those hyperlinks will be removed.\nDo you still want to delete it?',
+  'page_delete_broken_links_detail_title': 'Reference Details',
   'page_add_child': 'Add Subpage',
   'page_copy': 'Copy Page',
   'page_delete': 'Delete Page',
+  'page_delete_minimum_message': 'Cannot delete when only one page remains.',
+  'page_reorder_mode': 'Reorder mode',
+  'page_reorder_mode_exit': 'Exit reorder mode',
   'input_page_rename_hint': 'Please enter name',
   'spacing': 'Spacing',
   'zindex': 'Order',
@@ -232,6 +249,11 @@ const Map<String, String> enUs = {
   'math_edit_button': 'Edit Math',
   'insert': 'Insert',
   'hyperlink': 'Hyperlink',
+  'hyperlink_internal_page': 'Link to in-document page',
+  'hyperlink_select_page_hint': 'Select page to link',
+  'hyperlink_no_linkable_pages': 'No linkable pages',
+  'preview_invalid_internal_link':
+      'This link points to a deleted or missing page.',
   'share': 'Share',
   'more_menu': 'More Menu',
   'more_items': 'More Items',
@@ -249,12 +271,11 @@ const Map<String, String> enUs = {
   'no_permission': 'No Permission',
 
   'background_image': 'Background Image',
+  'image_popup_menu_tooltip': 'Select Image',
   'repeat': 'Repeat',
   'close': 'Close',
   'editor': 'Editor',
   'no_editor': 'No Editor',
-
-  'connected_user_list_online': 'Online Users %s',
 
   // Languages
   'korean': 'Korean',
@@ -410,6 +431,7 @@ const Map<String, String> enUs = {
   'PUBLICLINK': 'All users with link',
   'USERLINK': 'Users with permission',
   'ONLYME': 'Private project',
+  'SHARED': 'Shared project',
 
   // Edit Permission
   'page_edit_permission': 'Edit Page Access Permission',
@@ -433,7 +455,7 @@ const Map<String, String> enUs = {
   'coop_mode_countdown': 'Editing Time',
   'coop_mode_countdown_message': 'Co-op editing time has ended.',
   'coop_mode_countdown_seconds': 'Remaining time %s : %s',
-
+  'connected_user_list_online': 'Online \n %s users',
   // Widget
   'slider': 'Slider',
   'simple_slider': 'Simple Slider',
@@ -685,22 +707,6 @@ const Map<String, String> enUs = {
   'shared_project_input_id_message': 'Please enter the ID of the user to share',
   'shared_project_input_id_message_sub': 'Invalid ID format',
   'shared_project_input_email_message_sub': 'Invalid email format',
-  'shared_project_user_add_type': 'User Add Type',
-  'shared_project_user_add_type_email': 'Email',
-  'shared_project_user_add_type_id': 'ID',
-  'shared_project_user_add_type_share_id': 'Share ID',
-  'shared_project_user_add_type_user_id': 'User ID',
-  'shared_project_user_add_type_email_hint':
-      'Please enter the email of the user to share',
-  'shared_project_user_add_type_user_id_hint':
-      'Please enter the user ID of the user to share',
-  'shared_project_user_add_type_id_hint':
-      'Please enter the ID of the user to share',
-  'shared_project_user_add_type_email_hint_sub': 'Invalid email format',
-  'shared_project_user_add_type_id_hint_sub': 'Invalid ID format',
-  'shared_project_user_add_type_email_hint_sub_sub': 'Invalid email format',
-  'shared_project_user_add_type_id_hint_sub_sub': 'Invalid ID format',
-  'shared_project_edit_count_change': 'Change Edit Time',
 
   // Connection
   'connection_info_message':
@@ -1027,7 +1033,8 @@ const Map<String, String> enUs = {
   'splash_slide5_content':
       'You\'re ready to easily and quickly create e-books and share them.',
 
-  'document_importing': 'Document importing...',
+  'document_converting': 'Document converting...',
+  'document_creating': 'Document creating',
   'document_import_success': 'Document import success',
   'document_import_failed': 'Document import failed',
   'document_import_failed_error': 'Document import failed',
@@ -1036,6 +1043,10 @@ const Map<String, String> enUs = {
   'document_unsupported': 'Unsupported document',
   'document_error': 'Error occurred',
   'document_conversion_completed': 'Conversion completed',
+
+  'media_unsupported_audio': 'Unsupported audio',
+  'media_unsupported_image': 'Unsupported image',
+  'media_unsupported_video': 'Unsupported video',
 
   'default_font': 'System Default',
 
@@ -1051,4 +1062,34 @@ const Map<String, String> enUs = {
   'subscription_storage_limit_exceeded':
       'Storage limit exceeded. Please upgrade your plan.',
   'subscription_upgrade_required': 'Plan Upgrade Required',
+
+  // Subscription Overage — forceable (paid plan overage warning)
+  'subscription_storage_overage_title': 'Storage Limit Exceeded',
+  'subscription_storage_overage_message':
+      'Currently using %s / %s.\nThis action will increase usage to %s.\nAdditional charges may apply. Do you want to continue?',
+  'subscription_project_overage_title': 'Project Limit Exceeded',
+  'subscription_project_overage_message':
+      'Currently using %s / %s projects.\nAdditional charges may apply. Do you want to continue?',
+  'subscription_overage_continue': 'Continue',
+
+  // Subscription Blocked — not forceable (free plan limit reached)
+  'subscription_storage_blocked_title': 'Storage Limit Reached',
+  'subscription_storage_blocked_message':
+      'Currently using %s / %s.\nYou have reached the storage limit and cannot upload files.\nPlease upgrade your plan.',
+  'subscription_project_blocked_title': 'Project Limit Reached',
+  'subscription_project_blocked_message':
+      'Currently using %s / %s projects.\nYou have reached the project limit and cannot create new projects.\nPlease upgrade your plan.',
+
+  // IOP Integration
+  'iop_file_id_missing': 'IOP file ID is missing.',
+  'iop_saving_page': 'Saving page...',
+  'iop_saving': 'Saving to IOP...',
+  'iop_save_success': 'Saved to IOP successfully.',
+  'iop_save_failed': 'Failed to save',
+  'iop_save_error': 'An error occurred while saving.',
+  'iop_importing': 'Importing EPUB...',
+  'iop_import_success': 'Import successful!',
+  'iop_import_failed': 'Failed to create project',
+  'iop_synced': 'Synced',
+  'iop_sync_required': 'Sync required (click to save)',
 };

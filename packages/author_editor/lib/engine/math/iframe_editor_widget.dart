@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 import 'dart:math' as math;
@@ -5,21 +6,32 @@ import 'dart:ui_web';
 
 import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
-
 class IFrameEditorWidget extends StatefulWidget {
   final String url;
+  final String? fontUrl;
   final double width;
   final double height;
+  final Set<String> validInternalHrefs;
+  final String invalidInternalLinkMessage;
   final void Function(String)? onLoad;
   final void Function(String)? onError;
+  final void Function(String)? onPageUrlChanged;
+  final double? documentWidth;
+  final double? documentHeight;
 
   const IFrameEditorWidget({
     super.key,
     required this.url,
+    this.fontUrl,
     this.width = double.infinity,
     this.height = 500,
+    this.validInternalHrefs = const <String>{},
+    this.invalidInternalLinkMessage = '삭제되었거나 존재하지 않는 페이지 링크입니다.',
     this.onLoad,
     this.onError,
+    this.onPageUrlChanged,
+    this.documentWidth,
+    this.documentHeight,
   });
 
   @override
@@ -118,6 +130,8 @@ class IFrameEditorWidgetState extends State<IFrameEditorWidget> {
         try {
           final iframeDocument = _iframe!.contentDocument;
           if (iframeDocument != null && iframeDocument.body != null) {
+            _injectFontStyle(iframeDocument);
+            _injectPreviewLinkInterceptor(iframeDocument);
             final contentWidth =
                 iframeDocument.documentElement?.scrollWidth ?? 0;
             final contentHeight =
@@ -141,8 +155,14 @@ class IFrameEditorWidgetState extends State<IFrameEditorWidget> {
             iframeDocument.body!.style
               ..transform = 'scale($scale)'
               ..transformOrigin = 'top left'
-              ..width = '100%'
-              ..height = '100%';
+             // ..width = '100%'
+              // ..height = '100%';
+              ..width = widget.documentWidth != null
+                  ? '${widget.documentWidth.toString()}px'
+                  : '100%'
+              ..height = widget.documentHeight != null
+                  ? '${widget.documentHeight.toString()}px'
+                  : '100%';
           }
 
           if (mounted) {
@@ -213,6 +233,161 @@ class IFrameEditorWidgetState extends State<IFrameEditorWidget> {
         widget.onError?.call('Error creating iframe: $e');
       }
     }
+  }
+
+  Future<void> _injectFontStyle(web.Document iframeDocument) async {
+    if (widget.fontUrl == null) return;
+    try {
+      final response = await web.window.fetch(widget.fontUrl!.toJS).toDart;
+      if (!response.ok) return;
+      final text = (await response.text().toDart).toDart;
+      final data = jsonDecode(text);
+      if (data == null || data['fonts'] == null) return;
+      final buffer = StringBuffer();
+      for (final font in data['fonts']) {
+        buffer.write("@font-face { font-family: '${font['family']}'; "
+            "src: url('${font['url']}'); "
+            "font-weight: ${font['weight']}; "
+            "font-display: swap; }");
+      }
+      final style =
+          iframeDocument.createElement('style') as web.HTMLStyleElement
+            ..id = 've-styleforfont'
+            ..textContent = buffer.toString();
+      iframeDocument.head?.appendChild(style);
+    } catch (e) {
+      debugPrint('Error injecting font style: $e');
+    }
+  }
+
+  void _injectPreviewLinkInterceptor(web.Document iframeDocument) {
+    final interceptorId = 'vulcan-preview-link-interceptor';
+    if (iframeDocument.getElementById(interceptorId) != null) {
+      return;
+    }
+
+    final validInternalHrefJson = jsonEncode(
+      widget.validInternalHrefs.map((e) => e.toLowerCase()).toList(),
+    );
+    final invalidInternalLinkMessageJson =
+        jsonEncode(widget.invalidInternalLinkMessage);
+
+    final script =
+        iframeDocument.createElement('script') as web.HTMLScriptElement
+          ..id = interceptorId
+          ..text = '''
+(function () {
+  if (window.__vulcanPreviewLinkInterceptorInstalled) {
+    return;
+  }
+  window.__vulcanPreviewLinkInterceptorInstalled = true;
+  var validInternalHrefs = new Set($validInternalHrefJson);
+  var invalidInternalLinkMessage = $invalidInternalLinkMessageJson;
+
+  function normalizeInternalHref(rawHref) {
+    if (!rawHref) {
+      return null;
+    }
+    var value = (rawHref || '').trim();
+    if (!value || value.charAt(0) === '#') {
+      return null;
+    }
+
+    var lower = value.toLowerCase();
+    if (lower.startsWith('mailto:') ||
+        lower.startsWith('tel:') ||
+        lower.startsWith('javascript:') ||
+        lower.startsWith('data:')) {
+      return null;
+    }
+
+    var hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(value);
+    if (hasScheme) {
+      return null;
+    }
+
+    try {
+      var parsed = new URL(value, window.location.href);
+      var path = parsed.pathname || '';
+      var segments = path.split('/').filter(function (seg) { return !!seg; });
+      if (segments.length === 0) {
+        return null;
+      }
+      var fileName = decodeURIComponent(segments[segments.length - 1]).toLowerCase();
+      if (!/^[^/]+\\.(xhtml|html?)\$/i.test(fileName)) {
+        return null;
+      }
+      return fileName;
+    } catch (_) {
+      var noHash = value.split('#')[0];
+      var noQuery = noHash.split('?')[0];
+      var parts = noQuery.split('/').filter(function (seg) { return !!seg; });
+      if (parts.length === 0) {
+        return null;
+      }
+      var fallback = decodeURIComponent(parts[parts.length - 1]).toLowerCase();
+      if (!/^[^/]+\\.(xhtml|html?)\$/i.test(fallback)) {
+        return null;
+      }
+      return fallback;
+    }
+  }
+
+  document.addEventListener('click', function (event) {
+    var target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    var anchor = target.closest('a[href]');
+    if (!anchor) {
+      return;
+    }
+
+    var rawHref = (anchor.getAttribute('href') || '').trim();
+    if (!rawHref) {
+      return;
+    }
+
+    var internalHref = normalizeInternalHref(rawHref);
+    if (internalHref) {
+      if (!validInternalHrefs.has(internalHref)) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (window.alert) {
+          window.alert(invalidInternalLinkMessage);
+        }
+      }
+      return;
+    }
+
+    var lowerHref = rawHref.toLowerCase();
+    if (lowerHref.startsWith('mailto:') ||
+        lowerHref.startsWith('tel:') ||
+        lowerHref.startsWith('javascript:')) {
+      return;
+    }
+
+    var hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(rawHref);
+    var looksLikeDomainWithoutScheme = /^(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:[/:?#].*)?\$/i.test(rawHref);
+
+    if (!hasScheme && !looksLikeDomainWithoutScheme) {
+      return;
+    }
+
+    var openUrl = rawHref;
+    if (!hasScheme && looksLikeDomainWithoutScheme) {
+      openUrl = 'https://' + rawHref;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    window.open(openUrl, '_blank', 'noopener,noreferrer');
+  }, true);
+})();
+''';
+
+    iframeDocument.head?.appendChild(script);
   }
 
   @override

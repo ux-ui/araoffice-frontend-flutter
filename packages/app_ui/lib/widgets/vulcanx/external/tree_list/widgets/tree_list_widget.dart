@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 import '../../../../../app_ui.dart';
 
@@ -34,10 +35,14 @@ class TreeListWidget extends StatefulWidget {
   final Function()? onOpenDocument;
   final Function(TreeListModel page) onMemo;
   final Function(TreeListModel page)? onCreateThumbnail;
+  final void Function(TreeListModel page)? onThumbnailThenSetCover;
   final String? currentUserId;
 
   final Function() onViewColumn;
   final bool viewColumn;
+
+  /// false이면 상단「새 페이지」등 추가 UI 비활성 — 생성 완료까지 중복 방지용
+  final bool canAddPage;
 
   const TreeListWidget({
     super.key,
@@ -66,10 +71,12 @@ class TreeListWidget extends StatefulWidget {
     this.onUnsetCoverPage,
     this.onOpenDocument,
     this.onCreateThumbnail,
+    this.onThumbnailThenSetCover,
     this.currentUserId,
     required this.onViewColumn,
     this.startPageId,
     this.viewColumn = true,
+    this.canAddPage = true,
   });
 
   @override
@@ -78,6 +85,12 @@ class TreeListWidget extends StatefulWidget {
 
 class TreeListWidgetState extends State<TreeListWidget> {
   late List<TreeListModel> pages;
+
+  /// 버튼으로 진입한 순서 변경 모드 (true면 길게 누르지 않고 드래그만으로 순서 변경)
+  bool _isReorderMode = false;
+  bool _isMultiSelectMode = false;
+  final Set<String> _selectedPageIds = <String>{};
+  int _pageVersion = 0;
 
   @override
   void initState() {
@@ -138,6 +151,10 @@ class TreeListWidgetState extends State<TreeListWidget> {
   @override
   void didUpdateWidget(covariant TreeListWidget oldWidget) {
     pages = widget.initialPages!;
+    _pageVersion++;
+    _selectedPageIds.removeWhere(
+      (id) => !pages.any((page) => page.id == id),
+    );
 
     if (widget.onPagesToHtml != null) {
       final htmlString = convertPagesToHtml(pages);
@@ -171,6 +188,94 @@ class TreeListWidgetState extends State<TreeListWidget> {
   void copyPage(String pageId) {
     final page = pages.firstWhere((p) => p.id == pageId);
     widget.onCopyPage.call(page);
+  }
+
+  bool _isSelectablePage(TreeListModel page) => !page.type.startsWith('temp_');
+
+  bool _isCopyablePage(TreeListModel page) =>
+      _isSelectablePage(page) && page.type != 'toc' && page.type != 'toc_sub';
+
+  Future<void> _waitForPageVersionChange(
+    int previousVersion, {
+    Duration timeout = const Duration(seconds: 4),
+  }) async {
+    final start = DateTime.now();
+    while (mounted && _pageVersion == previousVersion) {
+      if (DateTime.now().difference(start) >= timeout) {
+        break;
+      }
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+  }
+
+  Future<void> _copySelectedPages() async {
+    final selectedPages = pages.where((p) => _selectedPageIds.contains(p.id));
+    final copyTargets = selectedPages.where(_isCopyablePage).toList();
+    if (copyTargets.isEmpty) return;
+
+    for (final page in copyTargets) {
+      final beforeVersion = _pageVersion;
+      widget.onCopyPage.call(page);
+      await _waitForPageVersionChange(beforeVersion);
+    }
+  }
+
+  Future<void> _deleteSelectedPages() async {
+    final selectedPages = pages.where((p) => _selectedPageIds.contains(p.id));
+    final deleteTargets = selectedPages.where(_isSelectablePage).toList();
+    if (deleteTargets.isEmpty) return;
+
+    for (final page in deleteTargets) {
+      final beforeVersion = _pageVersion;
+      widget.onDeletePage.call(page);
+      await _waitForPageVersionChange(beforeVersion);
+    }
+  }
+
+  Future<void> _showMultiDeleteConfirmDialog() async {
+    final selectedCount = _selectedPageIds.length;
+    if (selectedCount == 0) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => PointerInterceptor(
+        child: AlertDialog(
+          title: Text('page_delete'.tr),
+          content:
+              Text('${'selected_items'.trArgs([selectedCount.toString()])}'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('cancel'.tr),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await _deleteSelectedPages();
+                if (!mounted) return;
+                setState(() {
+                  _selectedPageIds.clear();
+                  _isMultiSelectMode = false;
+                });
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text('delete'.tr),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _toggleMultiSelectMode() {
+    setState(() {
+      _isMultiSelectMode = !_isMultiSelectMode;
+      if (_isMultiSelectMode) {
+        _isReorderMode = false;
+      } else {
+        _selectedPageIds.clear();
+      }
+    });
   }
 
   void updatePageTitle(String pageId, String newTitle) {
@@ -366,98 +471,159 @@ class TreeListWidgetState extends State<TreeListWidget> {
     return Column(
       children: [
         AppBar(
+          toolbarHeight: _isMultiSelectMode ? 100 : null,
           actions: [
-            // TODO 목차 아이콘 추가
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: SizedBox(
-            //     width: widget.isEditingPermission ? 138 : 131,
-            //     child: VulcanXOutlinedButton.icon(
-            //       padding: const EdgeInsets.fromLTRB(16, 8, 0, 8),
-            //       iconAlignment: IconAlignment.end,
-            //       onPressed: () {},
-            //       disabled: !widget.isEditingPermission,
-            //       icon: (!widget.isEditingPermission)
-            //           ? const SizedBox(width: 16)
-            //           : VulcanXMoreMenu(
-            //               iconSize: 15,
-            //               items: [
-            //                 PopupMenuItem(
-            //                   child: Text('add_contents_icon_top_left'.tr),
-            //                   onTap: () => addContentsIcon('top_left'),
-            //                 ),
-            //                 PopupMenuItem(
-            //                   child: Text('add_contents_icon_top_right'.tr),
-            //                   onTap: () => addContentsIcon('top_right'),
-            //                 ),
-            //                 PopupMenuItem(
-            //                   child: Text('add_contents_icon_bottom_left'.tr),
-            //                   onTap: () => addContentsIcon('bottom_left'),
-            //                 ),
-            //                 PopupMenuItem(
-            //                   child: Text('add_contents_icon_bottom_right'.tr),
-            //                   onTap: () => addContentsIcon('bottom_right'),
-            //                 ),
-            //               ],
-            //             ),
-            //       child: AutoSizeText(
-            //         'add_contents_icon'.tr,
-            //         maxLines: 1,
-            //         overflow: TextOverflow.ellipsis,
-            //         maxFontSize: 12,
-            //         minFontSize: 10,
-            //       ),
-            //     ),
-            //   ),
-            // ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: 105,
-                child: VulcanXOutlinedButton.icon(
-                  disabled: widget.onlyPageSelection,
-                  padding: const EdgeInsets.all(5),
-                  icon: const Icon(
-                    Icons.add,
-                    size: 20,
-                  ),
-                  onPressed: () => widget.onlyPageSelection ? null : addPage(),
-                  child: AutoSizeText(
-                    'add_new_page'.tr,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ),
-            if (widget.onOpenDocument != null) ...[
-              Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: SizedBox(
-                  width: 43,
-                  child: Tooltip(
-                    message: 'office_import'.tr,
-                    child: VulcanXOutlinedButton.icon(
-                      padding: const EdgeInsets.all(7),
-                      icon: const Icon(Icons.file_open_outlined, size: 20),
-                      onPressed: () => widget.onOpenDocument?.call(),
-                      child: const SizedBox.shrink(),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: 105,
+                        child: VulcanXOutlinedButton.icon(
+                          disabled:
+                              widget.onlyPageSelection || !widget.canAddPage,
+                          padding: const EdgeInsets.all(5),
+                          icon: const Icon(
+                            Icons.add,
+                            size: 20,
+                          ),
+                          onPressed: () =>
+                              (widget.onlyPageSelection || !widget.canAddPage)
+                                  ? null
+                                  : addPage(),
+                          child: AutoSizeText(
+                            'add_new_page'.tr,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: SizedBox(
+                        width: 43,
+                        child: Tooltip(
+                          message: _isMultiSelectMode
+                              ? 'close'.tr
+                              : 'select_item_list'.tr,
+                          child: VulcanXOutlinedButton.icon(
+                            padding: const EdgeInsets.all(7),
+                            icon: Icon(
+                              _isMultiSelectMode ? Icons.close : Icons.list_alt,
+                              size: 20,
+                            ),
+                            onPressed: widget.onlyPageSelection
+                                ? null
+                                : () => _toggleMultiSelectMode(),
+                            child: const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (widget.onOpenDocument != null) ...[
+                      Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: SizedBox(
+                          width: 43,
+                          child: Tooltip(
+                            message: 'office_import'.tr,
+                            child: VulcanXOutlinedButton.icon(
+                              padding: const EdgeInsets.all(7),
+                              icon: const Icon(Icons.file_open_outlined,
+                                  size: 20),
+                              onPressed: () => widget.onOpenDocument?.call(),
+                              child: const SizedBox.shrink(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: SizedBox(
+                        width: 43,
+                        child: Tooltip(
+                          message: widget.viewColumn
+                              ? 'view_column_close_tooltip'.tr
+                              : 'view_column_open_tooltip'.tr,
+                          child: VulcanXOutlinedButton.icon(
+                            padding: const EdgeInsets.all(7),
+                            icon: const Icon(Icons.view_column_outlined,
+                                size: 20),
+                            onPressed: () => widget.onViewColumn(),
+                            child: const SizedBox.shrink(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_isMultiSelectMode)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Text(
+                          '${'selected_item'.tr}: ${_selectedPageIds.length}${'count'.tr}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: SizedBox(
+                          width: 43,
+                          child: PointerInterceptor(
+                            child: Tooltip(
+                              message: 'page_copy'.tr,
+                              child: VulcanXOutlinedButton.icon(
+                                padding: const EdgeInsets.all(7),
+                                icon: const Icon(Icons.copy_outlined, size: 20),
+                                onPressed: _selectedPageIds.isEmpty
+                                    ? null
+                                    : () async {
+                                        await _copySelectedPages();
+                                        if (!mounted) return;
+                                        setState(() {
+                                          _selectedPageIds.clear();
+                                          _isMultiSelectMode = false;
+                                        });
+                                      },
+                                child: const SizedBox.shrink(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: SizedBox(
+                          width: 43,
+                          child: PointerInterceptor(
+                            child: Tooltip(
+                              message: 'page_delete'.tr,
+                              child: VulcanXOutlinedButton.icon(
+                                padding: const EdgeInsets.all(7),
+                                icon:
+                                    const Icon(Icons.delete_outline, size: 20),
+                                onPressed: _selectedPageIds.isEmpty
+                                    ? null
+                                    : () => _showMultiDeleteConfirmDialog(),
+                                child: const SizedBox.shrink(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-            Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: SizedBox(
-                width: 43,
-                child: VulcanXOutlinedButton.icon(
-                  padding: const EdgeInsets.all(7),
-                  icon: const Icon(Icons.view_column_outlined, size: 20),
-                  onPressed: () => widget.onViewColumn(),
-                  child: const SizedBox.shrink(),
-                ),
-              ),
+              ],
             ),
           ],
         ),
@@ -466,6 +632,10 @@ class TreeListWidgetState extends State<TreeListWidget> {
             ownerId: widget.ownerId,
             selectedPageId: widget.selectedPageId, // 추가: 외부 selectedPageId 전달
             onlyPageSelection: widget.onlyPageSelection,
+            isReorderMode: _isReorderMode && !_isMultiSelectMode,
+            onToggleReorderMode: () =>
+                setState(() => _isReorderMode = !_isReorderMode),
+            canAddPage: widget.canAddPage,
             hasToc: widget.hasToc,
             hasCover: widget.hasCover,
             pages: pages,
@@ -485,6 +655,18 @@ class TreeListWidgetState extends State<TreeListWidget> {
             currentUserId: widget.currentUserId,
             onMemo: widget.onMemo,
             onCreateThumbnail: widget.onCreateThumbnail,
+            onThumbnailThenSetCover: widget.onThumbnailThenSetCover,
+            isMultiSelectMode: _isMultiSelectMode,
+            selectedPageIds: _selectedPageIds,
+            onTogglePageSelection: (pageId) {
+              setState(() {
+                if (_selectedPageIds.contains(pageId)) {
+                  _selectedPageIds.remove(pageId);
+                } else {
+                  _selectedPageIds.add(pageId);
+                }
+              });
+            },
           ),
         ),
       ],

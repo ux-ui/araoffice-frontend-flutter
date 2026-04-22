@@ -35,15 +35,19 @@ extension StringExtension on String? {
       return Color(int.parse(colorNames[colorName]!, radix: 16));
     }
 
-    // RGB 형식 확인
+    // RGB/RGBA 형식 확인
     if (this!.toUpperCase().startsWith('RGB')) {
-      final numbers = RegExp(r'\d+')
-          .allMatches(this!)
-          .map((m) => int.parse(m.group(0)!))
-          .toList();
-
-      if (numbers.length >= 3) {
-        return Color.fromRGBO(numbers[0], numbers[1], numbers[2], 1.0);
+      final match = RegExp(
+              r'rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)')
+          .firstMatch(this!);
+      if (match != null) {
+        final r = int.parse(match.group(1)!);
+        final g = int.parse(match.group(2)!);
+        final b = int.parse(match.group(3)!);
+        final alpha = (withAlpha && match.group(4) != null)
+            ? (double.tryParse(match.group(4)!) ?? 1.0).clamp(0.0, 1.0)
+            : 1.0;
+        return Color.fromRGBO(r, g, b, alpha);
       }
     }
 

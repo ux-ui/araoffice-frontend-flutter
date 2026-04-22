@@ -19,14 +19,29 @@ class HierarchicalListView extends StatefulWidget {
   final Function(TreeListModel)? onUnsetCoverPage;
   final Function(TreeListModel) onMemo;
   final Function(TreeListModel)? onCreateThumbnail;
+
+  /// 썸네일 캡처·업로드가 끝난 뒤 커버 설정까지 이어지게 할 때 사용 (에디터 쪽에서 처리)
+  final void Function(TreeListModel)? onThumbnailThenSetCover;
   final Function(String, String) onUpdateTitle;
   final Function({String? parentId}) onAddChild;
   final Function(String type, bool isActive) onActivePage;
   final Function(TreeListModel) onClick;
   final bool onlyPageSelection;
+
+  /// false이면 하위 페이지 추가(컨텍스트 메뉴) 비활성 — 생성 진행 중 중복 방지용
+  final bool canAddPage;
   final String? startPageId;
   final bool showEditorUser;
   final String? currentUserId;
+
+  /// true이면 길게 누르지 않고도 드래그로 순서 변경 가능 (메뉴에서 진입한 순서 변경 모드)
+  final bool isReorderMode;
+  final bool isMultiSelectMode;
+  final Set<String> selectedPageIds;
+  final ValueChanged<String> onTogglePageSelection;
+
+  /// 순서 변경 모드 토글 (메뉴 항목에서 호출)
+  final VoidCallback? onToggleReorderMode;
 
   const HierarchicalListView({
     super.key,
@@ -47,11 +62,18 @@ class HierarchicalListView extends StatefulWidget {
     required this.onActivePage,
     required this.onClick,
     this.onlyPageSelection = false,
+    this.canAddPage = true,
     this.startPageId,
     this.showEditorUser = false,
     this.currentUserId,
+    this.isReorderMode = false,
+    this.onToggleReorderMode,
+    this.isMultiSelectMode = false,
+    this.selectedPageIds = const <String>{},
+    required this.onTogglePageSelection,
     required this.onMemo,
     this.onCreateThumbnail,
+    this.onThumbnailThenSetCover,
   });
 
   @override
@@ -164,7 +186,9 @@ class HierarchicalListViewState extends State<HierarchicalListView> {
     if (draggedItem.id == targetItem.id) return false;
     // 비활성화된 페이지는 드래그 불가
     if (draggedItem.type.startsWith('temp_') ||
-        targetItem.type.startsWith('temp_')) return false;
+        targetItem.type.startsWith('temp_')) {
+      return false;
+    }
 
     // toc_sub 타입 페이지는 드래그 불가 (이동 불가)
     if (draggedItem.type == 'toc_sub') {
@@ -187,6 +211,369 @@ class HierarchicalListViewState extends State<HierarchicalListView> {
     }
 
     return true;
+  }
+
+  Widget _buildDraggable({
+    required TreeListModel page,
+    required bool isTempPage,
+    required bool hasChildItems,
+    required bool isExpanded,
+    required Widget child,
+  }) {
+    final dragEnabled =
+        !widget.onlyPageSelection &&
+            !widget.isMultiSelectMode &&
+            !isTempPage &&
+            page.type != 'toc_sub';
+
+    final feedback = Material(
+      color: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        width: 200,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue),
+        ),
+        child: Text(processTranslation(page.title)),
+      ),
+    );
+
+    final childWhenDragging = Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey.withAlpha(51),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withAlpha(77)),
+      ),
+      child: Text(processTranslation(page.title)),
+    );
+
+    if (!dragEnabled) {
+      return child;
+    }
+
+    if (widget.isReorderMode) {
+      return Draggable<TreeListModel>(
+        maxSimultaneousDrags: 1,
+        data: page,
+        feedback: feedback,
+        childWhenDragging: childWhenDragging,
+        child: child,
+      );
+    }
+
+    return LongPressDraggable<TreeListModel>(
+      maxSimultaneousDrags: 1,
+      data: page,
+      feedback: feedback,
+      childWhenDragging: childWhenDragging,
+      child: child,
+    );
+  }
+
+  /// DragTarget builder 안에서 쓸 페이지 행 컨텐츠(Container). 괄호 구조 단순화를 위해 분리.
+  Widget _buildPageItemContent(
+    BuildContext context,
+    TreeListModel page,
+    bool isTempPage,
+    bool hasChildItems,
+    bool isExpanded,
+  ) {
+    final canSelectInMultiMode = !isTempPage;
+    final isSelectedInMultiMode = widget.selectedPageIds.contains(page.id);
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isTempPage
+            ? Colors.grey.withAlpha(26)
+            : highlightedId == page.id &&
+                    highlightPosition == DragTargetPosition.inside
+                ? Colors.blue.withAlpha(26)
+                : Colors.white,
+        border: selectedPageId == page.id && !isTempPage
+            ? Border.all(color: const Color(0xff000000), width: 2)
+            : isTempPage
+                ? Border.all(color: Colors.grey.withAlpha(128), width: 1)
+                : highlightedId == page.id &&
+                        highlightPosition == DragTargetPosition.inside
+                    ? Border.all(color: Colors.blue, width: 2)
+                    : Border.all(color: Colors.grey.withAlpha(77), width: 1),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(13),
+            offset: const Offset(0, 2),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (widget.isMultiSelectMode)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Checkbox(
+                value: canSelectInMultiMode ? isSelectedInMultiMode : false,
+                onChanged: canSelectInMultiMode
+                    ? (_) => widget.onTogglePageSelection(page.id)
+                    : null,
+              ),
+            ),
+          if (hasChildItems && !isTempPage)
+            IconButton(
+              constraints: const BoxConstraints(),
+              padding: const EdgeInsets.all(5),
+              icon: Icon(
+                isExpanded ? Icons.expand_more : Icons.chevron_right,
+                size: 20,
+              ),
+              onPressed: () => toggleExpand(page.id),
+              tooltip: isExpanded ? 'collapse'.tr : 'expand'.tr,
+            )
+          else
+            const SizedBox(width: 15),
+          Expanded(
+            flex: 10,
+            child: Tooltip(
+              message: processTranslation(page.title),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          processTranslation(page.title),
+                          maxLines: 2,
+                        ),
+                      ),
+                      if (page.type == 'cover' && !isTempPage)
+                        Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'cover'.tr,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      if ((page.type == 'toc' || page.type == 'toc_sub') &&
+                          !isTempPage)
+                        Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'toc'.tr,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (widget.showEditorUser && !isTempPage)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '${'editor'.tr} : ${page.editorUser ?? 'no_editor'.tr}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Color.fromARGB(255, 20, 18, 18),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const Spacer(),
+          (widget.onlyPageSelection || widget.isMultiSelectMode)
+              ? const SizedBox(height: 35)
+              : Row(
+                  children: [
+                    if (page.type.startsWith('temp_'))
+                      IconButton(
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(5),
+                        onPressed: isTempPage
+                            ? () {
+                                final type =
+                                    page.type.replaceFirst('temp_', '');
+                                widget.onActivePage(type, true);
+                              }
+                            : () {
+                                final type = page.type;
+                                widget.onActivePage(type, false);
+                              },
+                        tooltip: isTempPage ? 'show_page'.tr : 'hide_page'.tr,
+                        icon: Icon(
+                          isTempPage
+                              ? Icons.visibility_off_outlined
+                              : Icons.remove_red_eye_outlined,
+                          size: 20,
+                        ),
+                      ),
+                    if (!page.type.startsWith('temp_'))
+                      VulcanXMoreMenu(
+                        items:
+                            _buildPageItemMenuItems(context, page, isTempPage),
+                      ),
+                  ],
+                ),
+        ],
+      ),
+    );
+  }
+
+  List<PopupMenuItem<String>> _buildPageItemMenuItems(
+      BuildContext context, TreeListModel page, bool isTempPage) {
+    return [
+      if (page.type != 'toc' && page.type != 'toc_sub' && widget.canAddPage)
+        PopupMenuItem(
+          value: 'page_add_child',
+          child: Text('page_add_child'.tr),
+          onTap: () {
+            widget.onAddChild(parentId: page.id);
+            setState(() => expandedItems.add(page.id));
+          },
+        ),
+      PopupMenuItem(
+        value: 'page_rename_title',
+        child: Text('page_rename_title'.tr),
+        onTap: () => _showEditTitleDialog(context, page),
+      ),
+      if (page.type != 'toc' && page.type != 'toc_sub')
+        PopupMenuItem(
+          value: 'page_copy',
+          child: Text('page_copy'.tr),
+          onTap: () => widget.onCopyPage(page.id),
+        ),
+      PopupMenuItem(
+        value: 'page_delete',
+        child: Text('page_delete'.tr),
+        onTap: () => _showDeleteConfirmDialog(context, page),
+      ),
+      if (!widget.onlyPageSelection && widget.onToggleReorderMode != null)
+        PopupMenuItem(
+          value: 'page_reorder_mode',
+          child: Text(
+            widget.isReorderMode
+                ? 'page_reorder_mode_exit'.tr
+                : 'page_reorder_mode'.tr,
+          ),
+          onTap: () => widget.onToggleReorderMode?.call(),
+        ),
+      if (page.type != 'toc' && page.type != 'toc_sub')
+        PopupMenuItem(
+          value: 'page_set_start_page',
+          child: Text('page_set_start_page'.tr),
+          onTap: () => widget.onSetStartPage(page),
+        ),
+      if (widget.onSetCoverPage != null &&
+          widget.onUnsetCoverPage != null &&
+          page.type != 'toc' &&
+          page.type != 'toc_sub')
+        PopupMenuItem(
+          value: page.type == 'cover' ? 'page_unset_cover' : 'page_set_cover',
+          child: Text(
+            page.type == 'cover' ? 'page_unset_cover'.tr : 'page_set_cover'.tr,
+          ),
+          onTap: () {
+            if (page.type == 'cover') {
+              widget.onUnsetCoverPage!(page);
+            } else {
+              final isCurrentPage = page.id == selectedPageId;
+
+              if (widget.onThumbnailThenSetCover != null) {
+                if (isCurrentPage) {
+                  widget.onThumbnailThenSetCover!(page);
+                } else {
+                  if (widget.selectedPageId == null) {
+                    setState(() {
+                      _internalSelectedPageId = page.id;
+                    });
+                  }
+                  widget.onClick(page);
+                  Future.delayed(
+                    const Duration(milliseconds: 700),
+                    () {
+                      widget.onThumbnailThenSetCover?.call(page);
+                    },
+                  );
+                }
+              } else {
+                if (isCurrentPage) {
+                  widget.onCreateThumbnail?.call(page);
+                  Future.delayed(
+                    const Duration(seconds: 1),
+                    () {
+                      widget.onSetCoverPage?.call(page);
+                    },
+                  );
+                } else {
+                  if (widget.selectedPageId == null) {
+                    setState(() {
+                      _internalSelectedPageId = page.id;
+                    });
+                  }
+                  widget.onClick(page);
+                  Future.delayed(
+                    const Duration(milliseconds: 700),
+                    () {
+                      widget.onCreateThumbnail?.call(page);
+                      Future.delayed(
+                        const Duration(seconds: 1),
+                        () {
+                          widget.onSetCoverPage?.call(page);
+                        },
+                      );
+                    },
+                  );
+                }
+              }
+            }
+          },
+        ),
+      if (page.id == selectedPageId)
+        PopupMenuItem(
+          value: 'memo_view',
+          child: Text('memo_view'.tr),
+          onTap: () => widget.onMemo(page),
+        ),
+      if (page.id == selectedPageId &&
+          widget.onCreateThumbnail != null &&
+          widget.currentUserId == 'arasoft')
+        PopupMenuItem(
+          value: 'create_thumbnail',
+          child: Text('create_thumbnail'.tr),
+          onTap: () => widget.onCreateThumbnail!(page),
+        ),
+    ];
   }
 
   Widget buildPageItem(TreeListModel page, int level) {
@@ -310,10 +697,21 @@ class HierarchicalListViewState extends State<HierarchicalListView> {
                           }
                         : null,
                     builder: (context, candidateData, rejectedData) {
+                      final dragChild = _buildPageItemContent(
+                        context,
+                        page,
+                        isTempPage,
+                        hasChildItems,
+                        isExpanded,
+                      );
                       return GestureDetector(
                         onTap: isTempPage
                             ? null
                             : () {
+                                if (widget.isMultiSelectMode) {
+                                  widget.onTogglePageSelection(page.id);
+                                  return;
+                                }
                                 // 외부에서 selectedPageId가 제어되지 않는 경우에만 내부 상태 업데이트
                                 if (widget.selectedPageId == null) {
                                   setState(() {
@@ -323,353 +721,12 @@ class HierarchicalListViewState extends State<HierarchicalListView> {
                                 widget.onClick(page);
                               },
                         child: PointerInterceptor(
-                          child: LongPressDraggable<TreeListModel>(
-                            maxSimultaneousDrags: widget.onlyPageSelection ||
-                                    isTempPage ||
-                                    page.type == 'toc_sub'
-                                ? 0
-                                : 1,
-                            data: page,
-                            feedback: Material(
-                              color: Colors.transparent,
-                              elevation: 0,
-                              child: Container(
-                                width: 200,
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.blue),
-                                ),
-                                child: Text(processTranslation(page.title)),
-                              ),
-                            ),
-                            childWhenDragging: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withAlpha(51),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: Colors.grey.withAlpha(77)),
-                              ),
-                              child: Text(processTranslation(page.title)),
-                            ),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: isTempPage
-                                    ? Colors.grey.withAlpha(26)
-                                    : highlightedId == page.id &&
-                                            highlightPosition ==
-                                                DragTargetPosition.inside
-                                        ? Colors.blue.withAlpha(26)
-                                        : Colors.white,
-                                border: selectedPageId == page.id && !isTempPage
-                                    // ? Border.all(color: Colors.red, width: 2)
-                                    ? Border.all(
-                                        color: const Color(0xff000000),
-                                        width: 2)
-                                    : isTempPage
-                                        ? Border.all(
-                                            color: Colors.grey.withAlpha(128),
-                                            width: 1)
-                                        : highlightedId == page.id &&
-                                                highlightPosition ==
-                                                    DragTargetPosition.inside
-                                            ? Border.all(
-                                                color: Colors.blue, width: 2)
-                                            : Border.all(
-                                                color:
-                                                    Colors.grey.withAlpha(77),
-                                                width: 1,
-                                              ),
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(13),
-                                    offset: const Offset(0, 2),
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  // temp 페이지는 하위 페이지 확장/축소 버튼 비활성화
-                                  if (hasChildItems && !isTempPage)
-                                    IconButton(
-                                      constraints: const BoxConstraints(),
-                                      padding: const EdgeInsets.all(5),
-                                      icon: Icon(
-                                        isExpanded
-                                            ? Icons.expand_more
-                                            : Icons.chevron_right,
-                                        size: 20,
-                                      ),
-                                      onPressed: () => toggleExpand(page.id),
-                                      tooltip: isExpanded
-                                          ? 'collapse'.tr
-                                          : 'expand'.tr,
-                                    )
-                                  else
-                                    const SizedBox(width: 15),
-                                  Expanded(
-                                    flex: 10,
-                                    child: Tooltip(
-                                      message: processTranslation(page.title),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  processTranslation(
-                                                      page.title),
-                                                  maxLines: 2,
-                                                  // style: TextStyle(
-                                                  //     color: isTempPage
-                                                  //         ? Colors.grey
-                                                  //         : widget.startPageId ==
-                                                  //                 page.id
-                                                  //             ? Colors.blue
-                                                  //             : null,
-                                                  //     overflow: TextOverflow
-                                                  //         .ellipsis),
-                                                ),
-                                              ),
-                                              // 커버 페이지에 "표지" 배지 표시
-                                              if (page.type == 'cover' &&
-                                                  !isTempPage)
-                                                Container(
-                                                  margin: const EdgeInsets.only(
-                                                      left: 8),
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.blue,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12),
-                                                  ),
-                                                  child: Text(
-                                                    'cover'.tr,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                              // TOC 페이지에 "목차" 배지 표시
-                                              if ((page.type == 'toc' ||
-                                                      page.type == 'toc_sub') &&
-                                                  !isTempPage)
-                                                Container(
-                                                  margin: const EdgeInsets.only(
-                                                      left: 8),
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.green,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12),
-                                                  ),
-                                                  child: Text(
-                                                    'toc'.tr,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                          // temp 페이지는 편집자 정보 비활성화
-                                          // 편집자 닉네임 표시
-                                          if (widget.showEditorUser &&
-                                              !isTempPage)
-                                            Align(
-                                              alignment: Alignment.centerRight,
-                                              child: Text(
-                                                  '${'editor'.tr} : ${page.editorUser ?? 'no_editor'.tr}',
-                                                  style: const TextStyle(
-                                                      fontSize: 10,
-                                                      color: Color.fromARGB(
-                                                          255, 20, 18, 18))),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  (widget.onlyPageSelection)
-                                      ? const SizedBox(height: 35)
-                                      : Row(
-                                          children: [
-                                            if (page.type.startsWith('temp_'))
-                                              IconButton(
-                                                constraints:
-                                                    const BoxConstraints(),
-                                                padding:
-                                                    const EdgeInsets.all(5),
-                                                onPressed: isTempPage
-                                                    ? () {
-                                                        final type = page.type
-                                                            .replaceFirst(
-                                                                'temp_', '');
-                                                        widget.onActivePage(
-                                                            type, true); // 활성화
-                                                      }
-                                                    : () {
-                                                        final type = page.type;
-                                                        widget.onActivePage(
-                                                            type,
-                                                            false); // 비활성화
-                                                      },
-                                                tooltip: isTempPage
-                                                    ? 'show_page'.tr
-                                                    : 'hide_page'.tr,
-                                                icon: Icon(
-                                                  isTempPage
-                                                      ? Icons
-                                                          .visibility_off_outlined
-                                                      : Icons
-                                                          .remove_red_eye_outlined,
-                                                  size: 20,
-                                                ),
-                                              ),
-                                            // 일반 페이지에만 메뉴 버튼 표시
-                                            if (!page.type.startsWith('temp_'))
-                                              VulcanXMoreMenu(
-                                                items: [
-                                                  // TOC 페이지와 toc_sub 페이지가 아닌 경우에만 하위 페이지 추가 메뉴 표시
-                                                  if (page.type != 'toc' &&
-                                                      page.type != 'toc_sub')
-                                                    PopupMenuItem(
-                                                      value: 'page_add_child',
-                                                      child: Text(
-                                                          'page_add_child'.tr),
-                                                      onTap: () {
-                                                        widget.onAddChild(
-                                                            parentId: page.id);
-                                                        setState(() {
-                                                          expandedItems
-                                                              .add(page.id);
-                                                        });
-                                                      },
-                                                    ),
-                                                  PopupMenuItem(
-                                                    value: 'page_rename_title',
-                                                    child: Text(
-                                                        'page_rename_title'.tr),
-                                                    onTap: () =>
-                                                        _showEditTitleDialog(
-                                                            context, page),
-                                                  ),
-                                                  // TOC 페이지와 toc_sub 페이지가 아닌 경우에만 페이지 복사 메뉴 표시
-                                                  if (page.type != 'toc' &&
-                                                      page.type != 'toc_sub')
-                                                    PopupMenuItem(
-                                                      value: 'page_copy',
-                                                      child:
-                                                          Text('page_copy'.tr),
-                                                      onTap: () => widget
-                                                          .onCopyPage(page.id),
-                                                    ),
-                                                  PopupMenuItem(
-                                                    value: 'page_delete',
-                                                    child:
-                                                        Text('page_delete'.tr),
-                                                    onTap: () =>
-                                                        _showDeleteConfirmDialog(
-                                                            context, page),
-                                                  ),
-                                                  // TOC 페이지와 toc_sub 페이지가 아닌 경우에만 시작 페이지 설정 메뉴 표시
-                                                  if (page.type != 'toc' &&
-                                                      page.type != 'toc_sub')
-                                                    PopupMenuItem(
-                                                      value:
-                                                          'page_set_start_page',
-                                                      child: Text(
-                                                          'page_set_start_page'
-                                                              .tr),
-                                                      onTap: () => widget
-                                                          .onSetStartPage(page),
-                                                    ),
-                                                  // 커버 설정/해제 메뉴 (TOC 페이지와 toc_sub 페이지가 아니고 해당 함수가 제공된 경우에만 표시)
-                                                  if (widget.onSetCoverPage !=
-                                                          null &&
-                                                      widget.onUnsetCoverPage !=
-                                                          null &&
-                                                      page.type != 'toc' &&
-                                                      page.type != 'toc_sub')
-                                                    PopupMenuItem(
-                                                      value: page.type ==
-                                                              'cover'
-                                                          ? 'page_unset_cover'
-                                                          : 'page_set_cover',
-                                                      child: Text(
-                                                          // 표지 해제, 표지 설정
-                                                          page.type == 'cover'
-                                                              ? 'page_unset_cover'
-                                                                  .tr
-                                                              : 'page_set_cover'
-                                                                  .tr),
-                                                      onTap: () {
-                                                        if (page.type ==
-                                                            'cover') {
-                                                          widget.onUnsetCoverPage!(
-                                                              page);
-                                                        } else {
-                                                          widget.onSetCoverPage!(
-                                                              page);
-                                                        }
-                                                      },
-                                                    ),
-                                                  if (page.id == selectedPageId)
-                                                    PopupMenuItem(
-                                                      value: 'memo_view',
-                                                      child:
-                                                          Text('memo_view'.tr),
-                                                      onTap: () {
-                                                        widget.onMemo(page);
-                                                      },
-                                                    ),
-                                                  if (page.id == selectedPageId &&
-                                                      widget.onCreateThumbnail !=
-                                                          null &&
-                                                      widget.currentUserId ==
-                                                          'arasoft')
-                                                    PopupMenuItem(
-                                                      value: 'create_thumbnail',
-                                                      child: Text(
-                                                          'create_thumbnail'.tr),
-                                                      onTap: () {
-                                                        widget.onCreateThumbnail!(
-                                                            page);
-                                                      },
-                                                    ),
-                                                ],
-                                              ),
-                                          ],
-                                        ),
-                                ],
-                              ),
-                            ),
+                          child: _buildDraggable(
+                            page: page,
+                            isTempPage: isTempPage,
+                            hasChildItems: hasChildItems,
+                            isExpanded: isExpanded,
+                            child: dragChild,
                           ),
                         ),
                       );
@@ -747,38 +804,12 @@ class HierarchicalListViewState extends State<HierarchicalListView> {
       BuildContext context, TreeListModel page) async {
     final String initialTitle = processTranslation(page.title);
 
-    final TextEditingController titleController =
-        TextEditingController(text: initialTitle);
-
-    return showDialog(
+    return showDialog<void>(
       context: context,
-      builder: (context) => PointerInterceptor(
-        child: AlertDialog(
-          title: Text('page_rename_title_text'.tr),
-          content: TextField(
-              controller: titleController,
-              decoration: InputDecoration(
-                labelText: 'page_rename_title_text_hint'.tr,
-                hintText: 'page_rename_title_text_message'.tr,
-              ),
-              autofocus: true,
-              onSubmitted: (value) =>
-                  widget.onUpdateTitle(page.id, titleController.text)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('cancel'.tr),
-            ),
-            TextButton(
-              onPressed: () {
-                if (titleController.text.isNotEmpty) {
-                  widget.onUpdateTitle(page.id, titleController.text);
-                  Navigator.pop(context);
-                }
-              },
-              child: Text('save'.tr),
-            ),
-          ],
+      builder: (dialogContext) => PointerInterceptor(
+        child: _EditPageTitleAlert(
+          initialTitle: initialTitle,
+          onSave: (newTitle) => widget.onUpdateTitle(page.id, newTitle),
         ),
       ),
     );
@@ -833,6 +864,78 @@ class HierarchicalListViewState extends State<HierarchicalListView> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 페이지 제목 편집 다이얼로그 — 엔터/적용 시 저장 후 닫기
+/// (Focus 위젯과 TextField에 동일 FocusNode를 쓰면 포커스 트리 assert가 나므로 TextField만 사용)
+class _EditPageTitleAlert extends StatefulWidget {
+  final String initialTitle;
+  final void Function(String newTitle) onSave;
+
+  const _EditPageTitleAlert({
+    required this.initialTitle,
+    required this.onSave,
+  });
+
+  @override
+  State<_EditPageTitleAlert> createState() => _EditPageTitleAlertState();
+}
+
+class _EditPageTitleAlertState extends State<_EditPageTitleAlert> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+  bool _didSave = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialTitle);
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _saveAndClose() {
+    if (_didSave || !mounted) return;
+    if (_controller.text.isEmpty) return;
+    _didSave = true;
+    widget.onSave(_controller.text);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('page_rename_title'.tr),
+      content: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        decoration: InputDecoration(
+          labelText: 'page_rename_title_text_hint'.tr,
+          hintText: 'page_rename_title_text_message'.tr,
+        ),
+        autofocus: true,
+        maxLines: 1,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _saveAndClose(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('cancel'.tr),
+        ),
+        TextButton(
+          onPressed: _saveAndClose,
+          child: Text('save'.tr),
+        ),
+      ],
     );
   }
 }

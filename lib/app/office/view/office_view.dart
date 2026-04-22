@@ -1,21 +1,36 @@
+import 'dart:typed_data';
+
 import 'package:api/api.dart';
 import 'package:app/app/login/view/login_controller.dart';
 import 'package:author_editor/iframe/epub_viewer_iframe.dart';
 import 'package:author_editor/iframe/iframe_mixin.dart';
 import 'package:author_editor/iframe/office_iframe.dart';
 import 'package:author_editor/mixins/dragdocs_mixin.dart';
+import 'package:common_util/common_util.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class OfficeView extends StatefulWidget {
   final String? fileUrl;
   final String? fileName;
+  final Uint8List? fileBytes;
+  final bool readOnly;
+  final bool exportAll;
+  final bool showClose;
+  final OnOpenCallback? onOpen;
+  final VoidCallback? onClose;
   final OnConvertCallback? onConvert;
 
   const OfficeView({
     super.key,
     this.fileUrl,
     this.fileName,
+    this.fileBytes,
+    this.readOnly = false,
+    this.exportAll = false,
+    this.showClose = false,
+    this.onOpen,
+    this.onClose,
     this.onConvert,
   });
 
@@ -32,12 +47,6 @@ class _OfficeViewState extends State<OfficeView> {
 
   // OfficeIframe의 함수를 호출
   final GlobalKey _officeIframeKey = GlobalKey();
-  void callExports(String pages) {
-    final state = _officeIframeKey.currentState;
-    if (state != null) {
-      (state as dynamic).callExports(pages);
-    }
-  }
 
   int getCurrentPage() {
     final state = _officeIframeKey.currentState;
@@ -53,6 +62,13 @@ class _OfficeViewState extends State<OfficeView> {
       return (state as dynamic).getTotalPages();
     }
     return 0;
+  }
+
+  void callExports(String pages) {
+    final state = _officeIframeKey.currentState;
+    if (state != null) {
+      (state as dynamic).callExports(pages);
+    }
   }
 
   @override
@@ -80,9 +96,32 @@ class _OfficeViewState extends State<OfficeView> {
 
   String get _url {
     if (DragDocsMixin.allowedEpubExtensions.contains(_fileExtension)) {
-      return '${ApiDio.apiHostAppServer.replaceAll('/api/v1', '')}epub_viewer/epub_viewer.html';
+      var epubViewerUrl =
+          '${ApiDio.apiHostAppServer.replaceAll('/api/v1', '')}epub_viewer/epub_viewer.html';
+
+      var queryParams = '';
+      if (widget.readOnly) {
+        queryParams = 'viewOnly=true';
+      }
+      if (widget.exportAll) {
+        if (queryParams.isNotEmpty) {
+          queryParams += '&';
+        }
+        queryParams += 'exportAll=true';
+      }
+      if (widget.showClose) {
+        if (queryParams.isNotEmpty) {
+          queryParams += '&';
+        }
+        queryParams += 'showClose=true';
+      }
+      if (queryParams.isNotEmpty) {
+        epubViewerUrl += '?$queryParams';
+      }
+
+      return epubViewerUrl;
     } else {
-      if (_fileExtension == 'txt') {
+      if (_fileExtension == 'txt' || _fileExtension == 'xhtml') {
         return '${ApiDio.apiHostAppServer.replaceAll('/api/v1', '')}dragdocs/textviewer.html';
       } else {
         return '${ApiDio.apiHostAppServer.replaceAll('/api/v1', '')}dragdocs/index.html';
@@ -93,11 +132,17 @@ class _OfficeViewState extends State<OfficeView> {
   Widget _buildWidget(BuildContext context) {
     final size = MediaQuery.of(context).size;
     if (DragDocsMixin.allowedEpubExtensions.contains(_fileExtension)) {
+      final baseUrl = AutoConfig.instance.domainType.originWithPath;
       return EpubViewerIframe(
+        baseUrl: baseUrl,
+        projectId: null,
         url: _url,
         fileUrl: _fileUrl,
+        fileBytes: widget.fileBytes,
+        fileName: _fileName,
         width: size.width,
         height: size.height,
+        onClose: widget.onClose,
         onConvert: widget.onConvert,
       );
     } else {
@@ -105,10 +150,15 @@ class _OfficeViewState extends State<OfficeView> {
         key: _officeIframeKey,
         url: _url,
         fileUrl: _fileUrl,
+        fileBytes: widget.fileBytes,
         fileName: _fileName,
         width: size.width,
         height: size.height,
-        readOnly: true,
+        readOnly: widget.readOnly,
+        exportAll: widget.exportAll,
+        showClose: widget.showClose,
+        onOpen: widget.onOpen,
+        onClose: widget.onClose,
         onConvert: widget.onConvert,
       );
     }

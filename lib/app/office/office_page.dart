@@ -55,8 +55,9 @@ class OfficePage extends GetView<OfficeController> {
                       key: controller.officeViewKey,
                       fileUrl: controller.fileUrl,
                       fileName: controller.fileName,
-                      onConvert: (result, fileName, page, content) => controller
-                          .onConvert(context, result, fileName, page, content),
+                       onConvert: (result, fileName, page, total, content) =>
+                          controller.onConvert(
+                              context, result, fileName, page, total, content),
                     ),
                   ),
                 );
